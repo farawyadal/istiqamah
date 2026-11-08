@@ -157,3 +157,19 @@ button{font-family:inherit;cursor:pointer}
 .card.upd .ut{font-size:14px;line-height:1.55;margin:6px 0 10px}.card.upd .un{font-size:12px;line-height:1.5;margin-top:8px;color:#C9D4E0}
 .btn.gold{background:var(--gold);color:var(--navy)}
 .btn:disabled{opacity:.6}
+
+/* v0.5.0: Tetapan, zon, akan datang */
+.sech{margin:18px 4px 0;font-size:12px;font-weight:800;letter-spacing:.08em;color:var(--gold3)}.sech+.card,.sech+.grid{margin-top:8px}
+.grid+.sech{margin-top:20px}
+.tile.soon{background:transparent;border:1.5px dashed #C9BE9A;color:#6B7785;opacity:.9}
+.tile.soon .sb{font-size:10px;font-weight:700;letter-spacing:.04em;color:var(--gold3)}
+.zbox{display:flex;align-items:center;gap:12px;margin-top:12px;padding:12px 14px;border-radius:14px;background:#DDF1E8;border:1.5px solid var(--green);color:var(--green)}
+.zbox svg{flex:none}.zbt{flex:1;min-width:0;color:var(--ink)}.zk{font-size:12px;font-weight:700;color:#0A5C4B}.zp{font-size:16px;font-weight:700;margin-top:1px}.zs{font-size:12px;color:var(--muted);margin-top:1px}
+.hist{margin-top:12px;padding:12px 14px;border-radius:14px;background:#EFE8D2}.hist>div:not(.lbl){display:flex;justify-content:space-between;font-size:13px;line-height:1.7;color:#2B3E52}
+.mopt{display:block;width:100%;box-sizing:border-box;margin-bottom:10px;padding:14px 16px;border-radius:16px;text-align:left;font-family:inherit;color:var(--ink);background:var(--card);border:1px solid var(--line)}
+.mopt.on{background:#DDF1E8;border:1.5px solid var(--green)}
+.mopt .mh{display:flex;align-items:center;gap:10px;font-size:16px}.mopt .dot{width:18px;height:18px;border-radius:9px;box-sizing:border-box;flex:none;border:2px solid #9A8F6E;background:#fff}.mopt.on .dot{border:5px solid var(--green)}
+.mopt i{font-style:normal;font-size:10px;font-weight:700;letter-spacing:.04em;padding:3px 8px;border-radius:10px;background:var(--gold);color:var(--navy)}
+.mopt .mb{font-size:13px;line-height:1.55;margin-top:6px;color:#2B3E52}
+.mlogo{width:64px;height:64px;margin:0 auto;border-radius:16px;overflow:hidden}.mlogo svg{width:64px;height:64px}
+.mt{font-size:22px;font-weight:700;margin-top:12px}

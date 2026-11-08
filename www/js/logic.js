@@ -227,6 +227,18 @@
   function angDiff(a, b) { return ((b - a + 540) % 360) - 180; }
   function compassIndex(deg) { return Math.round((((deg % 360) + 360) % 360) / 45) % 8; }
 
+  // Zon JAKIM paling hampir. pts = [[lat,lng,nama,kodZon],...]. Pulangkan null jika >150 km daripada semua titik.
+  function nearestZone(lat, lng, pts) {
+    var r = Math.PI / 180, best = null, bd = 1e9;
+    for (var i = 0; i < pts.length; i++) {
+      var dl = (pts[i][1] - lng) * r, dp = (pts[i][0] - lat) * r;
+      var a = Math.sin(dp / 2) * Math.sin(dp / 2) + Math.cos(lat * r) * Math.cos(pts[i][0] * r) * Math.sin(dl / 2) * Math.sin(dl / 2);
+      var d = 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      if (d < bd) { bd = d; best = pts[i]; }
+    }
+    return best && bd <= 150 ? { code: best[3], name: best[2], km: Math.round(bd) } : null;
+  }
+
   // 'v0.4.0-12' atau '0.4.0' -> [0,4,0]
   function parseVer(s) {
     var m = /(\d+)\.(\d+)\.(\d+)/.exec(s || '');
@@ -240,7 +252,7 @@
   }
 
   return {
-    parseVer: parseVer, newerVer: newerVer,
+    parseVer: parseVer, newerVer: newerVer, nearestZone: nearestZone,
     TAH_MIN: TAH_MIN, tahajudMax: tahajudMax, tahajudClamp: tahajudClamp,
     qiblaBearing: qiblaBearing, angDiff: angDiff, compassIndex: compassIndex,
     mins: mins, hhmm: hhmm, ymd: ymd, addDays: addDays, dayIndex: dayIndex,

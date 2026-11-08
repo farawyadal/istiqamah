@@ -108,4 +108,15 @@ ok('banding versi', () => {
   assert.ok(!L.newerVer('rubbish', '0.3.1'));
 });
 
+ok('zon ikut GPS', () => {
+  global.window = {}; require('../www/js/zonepts.js'); const pts = global.window.ISTI_ZONEPTS;
+  const z = (la, lo) => { const r = L.nearestZone(la, lo, pts); return r && r.code; };
+  assert.strictEqual(z(4.4713, 101.0436), 'PRK02');   // Batu Gajah
+  assert.strictEqual(z(2.59, 102.09), 'NGS02');       // Rembau
+  assert.strictEqual(z(3.07, 101.52), 'SGR01');       // Shah Alam
+  assert.strictEqual(z(5.3736, 100.4033), 'PNG01');   // Permatang Pauh
+  assert.strictEqual(z(6.12, 102.24), 'KTN01');       // Kota Bharu
+  assert.strictEqual(z(13.75, 100.5), null);          // Bangkok: di luar
+});
+
 console.log(n + ' ujian lulus');

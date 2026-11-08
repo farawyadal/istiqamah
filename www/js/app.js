@@ -1,8 +1,8 @@
 /* Istiqamah – UI, data JAKIM, notifikasi */
 (function () {
   'use strict';
-  var L = window.IstiLogic, I18N = window.ISTI_I18N, ZONES = window.ISTI_ZONES;
-  var APP_VERSION = '0.4.0';
+  var L = window.IstiLogic, I18N = window.ISTI_I18N, ZONES = window.ISTI_ZONES, ZPTS = window.ISTI_ZONEPTS || [];
+  var APP_VERSION = '0.5.0';
   var params = new URLSearchParams(location.search);
   var Cap = window.Capacitor;
   var isNative = !!(Cap && Cap.isNativePlatform && Cap.isNativePlatform());
@@ -13,8 +13,8 @@
   function save(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* abaikan */ } }
 
   var saved = load('isti.settings', null);
-  var firstRun = !saved;
-  var S = Object.assign({ zone: 'PNG01', male: true, lang: 'ms', tar: 20, tahMode: 'fixed', tahMin: 240, bells: {} }, saved || {});
+  var firstRun = !saved, mulaDone = false;
+  var S = Object.assign({ zone: 'PNG01', male: true, lang: 'ms', tar: 20, tahMode: 'fixed', tahMin: 240, zoneAuto: true, bells: {} }, saved || {});
   if (params.get('male') === '0') S.male = false;
   if (params.get('male') === '1') S.male = true;
   if (params.get('lang')) S.lang = params.get('lang');
@@ -42,6 +42,7 @@
   /* ---------- zon ---------- */
   function zoneOf(code) { return ZONES.filter(function (z) { return z.c === code; })[0] || ZONES.filter(function (z) { return z.c === 'PNG01'; })[0]; }
   function zoneShort(code) {
+    if (S.zoneAuto && S.autoPlace && S.autoPlace.code === code && code === S.zone) return S.autoPlace.name;
     var z = zoneOf(code);
     var sib = ZONES.filter(function (x) { return x.s === z.s; }).length;
     if (sib === 1) return z.s;
@@ -95,6 +96,38 @@
       .then(function (changed) { render(); reschedule(); return changed; });
   }
 
+  /* ---------- zon automatik (GPS) ---------- */
+  var Zst = { busy: false, err: false, last: 0 };
+  function autoZone(manual) {
+    if (!S.zoneAuto || firstRun && !manual || Zst.busy || !navigator.geolocation) return Promise.resolve();
+    if (!manual && Date.now() - Zst.last < 5 * 60 * 1000) return Promise.resolve();
+    Zst.busy = true; Zst.last = Date.now();
+    if (screen === 'tetapan') render();
+    return new Promise(function (res) {
+      navigator.geolocation.getCurrentPosition(res, function () { res(null); }, { enableHighAccuracy: false, timeout: 12000, maximumAge: 300000 });
+    }).then(function (pos) {
+      Zst.busy = false;
+      if (!pos) { Zst.err = true; if (manual) toast(u('zonLocGagal')); if (screen === 'tetapan') render(); return; }
+      Zst.err = false;
+      var loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      save('isti.loc', loc); if (typeof kb !== 'undefined') kb.loc = loc;
+      var z = L.nearestZone(loc.lat, loc.lng, ZPTS);
+      if (!z) { if (manual) toast(u('zonDiLuar')); if (screen === 'tetapan') render(); return; }
+      S.autoPlace = { name: z.name, code: z.code, at: Date.now() };
+      if (z.code === S.zone) { persist(); if (screen === 'tetapan' || screen === 'utama') render(); return; }
+      var old = S.zone;
+      S.zone = z.code; loadCache();
+      return refreshData(true).then(function () {
+        if (!L.validDay(cache.days[L.ymd(now())])) { // tiada data: kembali ke zon lama
+          S.zone = old; S.autoPlace = null; loadCache(); persist(); render(); reschedule(); toast(u('zonTiadaData')); return;
+        }
+        S.zoneHist = [{ t: Date.now(), c: z.code, n: z.name }].concat(S.zoneHist || []).slice(0, 5);
+        persist(); render(); reschedule();
+        toast(u('zonBertukar').replace('{z}', z.name));
+      });
+    });
+  }
+
   /* ---------- pengiraan hari ---------- */
   function dayModel(date, adj) {
     var t = cache.days[L.ymd(date)];
@@ -130,6 +163,14 @@
     tasbih: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8" stroke-width="3" stroke-dasharray="1 4.2"/><circle cx="12" cy="12" r="1.5"/></svg>',
     chk: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
     back: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>',
+    pin: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>',
+    mosque: '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#9A8F6E" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 20v-7a7 7 0 0 1 14 0v7M3 20h18M12 3v3"/></svg>',
+    speaker: '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#9A8F6E" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16 9a4 4 0 0 1 0 6"/></svg>',
+    flag: '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#9A8F6E" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3v18M6 4h11l-2 4 2 4H6"/></svg>',
+    book: '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#9A8F6E" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M3 5.5C5 4.5 8.5 4.5 12 6c3.5-1.5 7-1.5 9-.5V19c-2-1-5.5-1-9 .5-3.5-1.5-7-1.5-9-.5z"/><path d="M12 6v13.5"/></svg>',
+    doc: '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#9A8F6E" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h9l4 4v14H6z"/><path d="M9 12h7M9 16h7"/></svg>',
+    bars: '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#9A8F6E" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M7 20V11M12 20V5M17 20v-6"/></svg>',
+    plus: '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#9A8F6E" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9 12h6M12 9v6"/></svg>',
     gear: '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#7A5C12" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></svg>',
     info: '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#7A5C12" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></svg>',
     star: '<svg width="130" height="130" viewBox="0 0 100 100" fill="none" stroke="#E3C46F" stroke-width="0.8" aria-hidden="true" class="deco"><rect x="18" y="18" width="64" height="64"/><rect x="18" y="18" width="64" height="64" transform="rotate(45 50 50)"/></svg>',
@@ -236,46 +277,87 @@
   }
 
   function viewLagi() {
+    var soon = [['mas', 'masjid', ICON.mosque], ['azn', 'azan', ICON.speaker], ['pss', 'puasaSunat', ICON.moon.replace('#7A5C12', '#9A8F6E')], ['cab', 'cabaran', ICON.flag], ['kha', 'khatam', ICON.book],
+      ['umr', 'umrah', ICON.doc], ['buk', 'buku', ICON.book], ['rnk', 'ranking', ICON.bars], ['hds', 'hadisHari', ICON.doc], ['zkt', 'zakat', ICON.plus], ['haj', 'haji', ICON.doc]];
     return '<header class="banner plain">' + ICON.star + '<div class="pt">' + u('lagi') + '</div><div class="ps">' + u('lagiSub') + '</div></header>' +
       '<main class="scroll"><div class="grid">' +
       '<button class="tile" data-go="qiam">' + ICON.moon + u('qiam') + '</button>' +
       '<button class="tile" data-go="kal">' + ICON.cal + u('kal') + '</button>' +
       '<button class="tile" data-go="kiblat">' + ICON.compass + u('kiblat') + '</button>' +
       '<button class="tile" data-go="tetapan">' + ICON.gear + u('tetapan') + '</button>' +
-      '<button class="tile" data-go="tentang">' + ICON.info + u('tentang') + '</button></div></main>';
+      '<button class="tile" data-go="tentang">' + ICON.info + u('tentang') + '</button></div>' +
+      '<div class="sech" style="display:flex;justify-content:space-between"><span>' + u('akanDatang') + '</span><span style="font-weight:500;letter-spacing:0;color:var(--muted)">' + u('akanDatangNota') + '</span></div>' +
+      '<div class="grid">' + soon.map(function (x) {
+        return '<button class="tile soon" data-act="soon" aria-label="' + esc(u(x[1])) + ', ' + esc(u('tiba')) + '">' + x[2] + '<span>' + u(x[1]) + '</span><span class="sb">' + u('tibaCap') + '</span></button>';
+      }).join('') + '</div></main>';
   }
 
   function topbar(title, back) {
     return '<div class="topbar">' + (back ? '<button class="back" data-go="lagi" aria-label="' + u('kembali') + '">' + ICON.back + '</button>' : '<span style="width:12px"></span>') + '<div class="tt">' + title + '</div></div>';
   }
 
-  function viewTetapan() {
-    var states = [];
-    ZONES.forEach(function (z) { if (states.indexOf(z.s) < 0) states.push(z.s); });
-    var opts = states.map(function (s) {
-      return '<optgroup label="' + s + '">' + ZONES.filter(function (z) { return z.s === s; }).map(function (z) {
-        return '<option value="' + z.c + '"' + (z.c === S.zone ? ' selected' : '') + '>' + z.c + ' · ' + z.d + '</option>';
-      }).join('') + '</optgroup>';
-    }).join('');
-    function seg(name, val, items) {
-      return '<div class="seg" role="group">' + items.map(function (i) {
-        return '<button class="' + (val === i[0] ? 'on' : '') + '" data-set="' + name + '" data-val="' + i[0] + '" aria-pressed="' + (val === i[0]) + '">' + i[1] + '</button>';
-      }).join('') + '</div>';
+  function seg(name, val, items) {
+    return '<div class="seg" role="group">' + items.map(function (i) {
+      return '<button class="' + (val === i[0] ? 'on' : '') + '" data-set="' + name + '" data-val="' + i[0] + '" aria-pressed="' + (val === i[0]) + '">' + i[1] + '</button>';
+    }).join('') + '</div>';
+  }
+  function hmOf(ts) { var d = new Date(ts); return ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2); }
+  function zonCard() {
+    var auto = !!S.zoneAuto, body;
+    if (auto) {
+      var ap = S.autoPlace, zi = zoneOf(S.zone), hist = (S.zoneHist || []).slice(0, 3);
+      var place = ap && ap.code === S.zone ? esc(ap.name) + ', ' + esc(zi.s) : (Zst.busy ? u('zonMencari') : (Zst.err ? u('zonLocGagal') : '—'));
+      body = '<div class="zbox">' + ICON.pin + '<div class="zbt"><div class="zk">' + u('zonDikesan') + '</div><div class="zp">' + place + '</div><div class="zs">' + S.zone + (ap ? ' · ' + u('zonKemas') + ' ' + hmOf(ap.at) : '') + '</div></div></div>' +
+        '<button class="btn wide ghost" data-act="zoncheck" style="margin-top:10px"' + (Zst.busy ? ' disabled' : '') + '>' + (Zst.busy ? u('zonMencari') : u('zonSemak')) + '</button>' +
+        '<div class="note">' + u('zonAutoNota') + '</div>' +
+        (hist.length ? '<div class="hist"><div class="lbl" style="margin:0">' + u('zonSejarah') + '</div>' + hist.map(function (h) {
+          var d = new Date(h.t);
+          return '<div><span>' + T().ui.hari[d.getDay()] + ' ' + hmOf(h.t) + '</span><b>' + esc(h.n) + ' · ' + h.c + '</b></div>';
+        }).join('') + '</div>' : '');
+    } else {
+      var states = [];
+      ZONES.forEach(function (z) { if (states.indexOf(z.s) < 0) states.push(z.s); });
+      var opts = states.map(function (st) {
+        return '<optgroup label="' + st + '">' + ZONES.filter(function (z) { return z.s === st; }).map(function (z) {
+          return '<option value="' + z.c + '"' + (z.c === S.zone ? ' selected' : '') + '>' + z.c + ' · ' + z.d + '</option>';
+        }).join('') + '</optgroup>';
+      }).join('');
+      body = '<select id="zsel" class="sel" style="margin-top:12px" aria-label="' + u('zon') + '">' + opts + '</select><div class="note">' + u('zonManualNota') + '</div>';
     }
+    return '<div class="card"><div class="lbl">' + u('zon') + '</div>' + seg('zoneAuto', auto ? 1 : 0, [[1, u('zonAuto')], [0, u('zonManual')]]) + body + '</div>';
+  }
+  function viewMula() {
+    var auto = !!S.zoneAuto;
+    function opt(on, v, title, body, rec) {
+      return '<button class="mopt' + (on ? ' on' : '') + '" data-set="zoneAuto" data-val="' + v + '" aria-pressed="' + on + '"><div class="mh"><span class="dot"></span><b>' + title + '</b>' + (rec ? '<i>' + u('disyorkan') + '</i>' : '') + '</div><div class="mb">' + body + '</div></button>';
+    }
+    return '<main class="scroll" style="padding-top:calc(28px + env(safe-area-inset-top,0px))"><div style="text-align:center"><div class="mlogo">' + ICON.logo + '</div>' +
+      '<div class="mt">' + u('selamatDatang') + '</div><div class="note" style="font-size:14px">' + u('mulaZonTanya') + '</div></div>' +
+      '<div style="margin-top:18px">' + opt(auto, 1, u('zonAuto0'), u('zonAutoMula'), true) + opt(!auto, 0, u('zonManual'), u('zonManualMula'), false) + '</div>' +
+      '<div class="note">' + (auto ? u('zonAutoIzin') : u('zonManualLepas')) + '</div>' +
+      '<button class="btn wide" data-act="mulaNext" style="margin-top:14px">' + u('teruskan') + '</button></main>';
+  }
+  function sech(t) { return '<div class="sech">' + t + '</div>'; }
+  function viewTetapan() {
     var perm = '';
     if (isNative) {
       perm = '<div class="card"><button class="btn wide" data-act="perm">' + u('izinNotif') + '</button><div class="note">' + u('izinNotifNota') + '</div>' +
         '<button class="btn wide ghost" data-act="exact" style="margin-top:10px">' + u('izinAlarm') + '</button><div class="note">' + u('izinAlarmNota') + '</div></div>';
     }
+    var last = cache && cache.fetched ? '<div class="note">' + u('dataTerakhir') + ' ' + new Date(cache.fetched).toLocaleDateString(S.lang === 'en' ? 'en-GB' : 'ms-MY', { day: 'numeric', month: 'short' }) + ' ' + hmOf(cache.fetched) + '. ' + u('dataLuarTalian') + '</div>' : '<div class="note">' + u('dataLuarTalian') + '</div>';
     return topbar(u('tetapan'), !firstRun) +
       '<main class="scroll">' + (firstRun ? '<div class="welcome">' + u('mulaiSetup') + '</div>' : '') +
-      '<div class="card"><label class="lbl" for="zsel">' + u('zon') + '</label><select id="zsel" class="sel">' + opts + '</select></div>' +
+      sech(u('secZon')) + zonCard() +
+      sech(u('secSolat')) +
       '<div class="card"><div class="lbl">' + u('jantina') + '</div>' + seg('male', S.male ? 1 : 0, [[1, u('lelaki')], [0, u('perempuan')]]) + '<div class="note">' + u('jantinaNota') + '</div></div>' +
-      '<div class="card"><div class="lbl">' + u('bahasa') + '</div>' + seg('lang', S.lang, [['ms', 'Bahasa Melayu'], ['en', 'English']]) + '</div>' +
       '<div class="card"><div class="lbl">' + u('tarawih') + '</div>' + seg('tar', S.tar, [[8, '8'], [10, '10'], [20, '20']]) + '</div>' +
       tahCard() +
-      perm +
-      (firstRun ? '<button class="btn wide" data-act="done" style="margin-top:6px">' + u('selesai') + '</button>' : '<button class="btn wide ghost" data-act="refresh">' + u('kemaskini') + '</button>') +
+      sech(u('secBahasa')) +
+      '<div class="card"><div class="lbl">' + u('bahasa') + '</div>' + seg('lang', S.lang, [['ms', 'Bahasa Melayu'], ['en', 'English']]) + '</div>' +
+      (isNative ? sech(u('secNotif')) + perm : '') +
+      sech(u('secData')) +
+      '<div class="card">' + (firstRun ? '' : '<button class="btn wide ghost" data-act="refresh">' + u('kemaskini') + '</button>') + last + '</div>' +
+      (firstRun ? '<button class="btn wide" data-act="done" style="margin-top:10px">' + u('selesai') + '</button>' : '') +
       '</main>';
   }
 
@@ -614,13 +696,14 @@
     var scrollTop = 0, l0 = document.getElementById('list');
     if (l0) scrollTop = l0.scrollTop;
     var html;
-    if (firstRun) screen = 'tetapan';
+    if (firstRun) screen = mulaDone ? 'tetapan' : 'mula';
     if (screen === 'utama') html = viewUtama();
     else if (screen === 'zikir') html = viewZikir();
     else if (screen === 'qiam') html = viewQiam();
     else if (screen === 'kal') html = viewKal();
     else if (screen === 'kiblat') html = viewKiblat();
     else if (screen === 'lagi') html = viewLagi();
+    else if (screen === 'mula') html = viewMula();
     else if (screen === 'tetapan') html = viewTetapan();
     else html = viewTentang();
     var withNav = !firstRun;
@@ -747,6 +830,11 @@
       else if (n === 'lang') S.lang = v;
       else if (n === 'tar') S.tar = +v;
       else if (n === 'tahMode') S.tahMode = v;
+      else if (n === 'zoneAuto') {
+        S.zoneAuto = v === '1'; persist();
+        if (S.zoneAuto && !firstRun) { render(); return autoZone(true); }
+        return render();
+      }
       persist(); reschedule(); return render();
     }
     if (el.dataset.zsel) { Z.sel = el.dataset.zsel; zSave(); return render(); }
@@ -796,9 +884,16 @@
     if (a === 'done') {
       firstRun = false; persist(); screen = 'utama';
       askPermission().then(askExact);
-      render(); return refreshData(false);
+      render(); return refreshData(false).then(function () { return autoZone(true); });
     }
     if (a === 'saveqr') return saveQR();
+    if (a === 'soon') return toast(u('tibaToast'));
+    if (a === 'zoncheck') return autoZone(true);
+    if (a === 'mulaNext') {
+      mulaDone = true; persist();
+      if (S.zoneAuto) { return autoZone(true).then(function () { render(); }); }
+      return render();
+    }
     if (a === 'upd') { if (U.newer) location.href = U.newer.url; return; }
     if (a === 'updcheck') return checkUpdate(true);
     if (a === 'kbloc') return kbLocate();
@@ -823,7 +918,7 @@
   loadCache();
   render();
   pullZikir();
-  refreshData(false).then(function () { reschedule(); });
+  refreshData(false).then(function () { reschedule(); return autoZone(false); });
   checkUpdate(false);
 
   var lastMin = -1;
@@ -831,11 +926,12 @@
     var d = now(), m = d.getHours() * 60 + d.getMinutes();
     if (m !== lastMin) { lastMin = m; if (screen === 'utama' && !firstRun) render(); }
   }, 15000);
-  document.addEventListener('visibilitychange', function () {
-    if (!document.hidden) { wReady = !WGT; pullZikir().then(function () { render(); }); refreshData(false); reschedule(); }
-  });
+  function wake() {
+    wReady = !WGT; pullZikir().then(function () { render(); }); refreshData(false); reschedule(); checkUpdate(false); autoZone(false);
+  }
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) wake(); });
   if (isNative && Cap.Plugins && Cap.Plugins.App && Cap.Plugins.App.addListener) {
-    Cap.Plugins.App.addListener('resume', function () { wReady = !WGT; pullZikir().then(function () { render(); }); refreshData(false); reschedule(); checkUpdate(false); });
+    Cap.Plugins.App.addListener('resume', wake);
   }
 
   if (!isNative && 'serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
