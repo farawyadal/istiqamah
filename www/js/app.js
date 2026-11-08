@@ -2,7 +2,7 @@
 (function () {
   'use strict';
   var L = window.IstiLogic, I18N = window.ISTI_I18N, ZONES = window.ISTI_ZONES, ZPTS = window.ISTI_ZONEPTS || [];
-  var APP_VERSION = '0.5.0';
+  var APP_VERSION = '0.5.1';
   var params = new URLSearchParams(location.search);
   var Cap = window.Capacitor;
   var isNative = !!(Cap && Cap.isNativePlatform && Cap.isNativePlatform());
@@ -13,7 +13,7 @@
   function save(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* abaikan */ } }
 
   var saved = load('isti.settings', null);
-  var firstRun = !saved, mulaDone = false;
+  var firstRun = !saved, mulaDone = false, renderedScreen = '';
   var S = Object.assign({ zone: 'PNG01', male: true, lang: 'ms', tar: 20, tahMode: 'fixed', tahMin: 240, zoneAuto: true, bells: {} }, saved || {});
   if (params.get('male') === '0') S.male = false;
   if (params.get('male') === '1') S.male = true;
@@ -695,6 +695,7 @@
   function render() {
     var scrollTop = 0, l0 = document.getElementById('list');
     if (l0) scrollTop = l0.scrollTop;
+    var m0 = root.querySelector('main.scroll'), mTop = m0 ? m0.scrollTop : 0, mScreen = renderedScreen;
     var html;
     if (firstRun) screen = mulaDone ? 'tetapan' : 'mula';
     if (screen === 'utama') html = viewUtama();
@@ -709,6 +710,9 @@
     var withNav = !firstRun;
     root.className = screen === 'zikir' || screen === 'kiblat' ? 'dark' : '';
     root.innerHTML = '<div class="screen">' + html + '</div>' + (withNav ? nav() : '');
+    var m1 = root.querySelector('main.scroll');
+    if (m1 && mScreen === screen && mTop) m1.scrollTop = mTop; // kekal di tempat yang sama selepas ketik
+    renderedScreen = screen;
     document.documentElement.lang = S.lang === 'en' ? 'en' : 'ms';
     if (screen === 'kiblat') { kbStart(); kbUpdate(); } else kbStop();
     if (screen === 'tetapan' && S.tahMode === 'fixed') setupWheel();
