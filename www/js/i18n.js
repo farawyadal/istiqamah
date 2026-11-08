@@ -24,12 +24,21 @@ window.ISTI_I18N = {
       hantar: 'Hantar maklum balas', hantarNota: 'Ketik untuk buka app e-mel anda dengan mesej siap.',
       penafianTitle: 'PENAFIAN',
       penafian: 'Waktu solat ialah anggaran berdasarkan data JAKIM dan boleh berbeza beberapa minit mengikut kawasan. Sila rujuk pihak berkuasa agama tempatan jika ragu. Kandungan app ini untuk rujukan dan bukan pengganti guru atau ustaz.',
-      baharu: ['Waktu solat fardu ikut zon JAKIM', 'Senarai solat sunat harian dengan notifikasi', 'Mod Jumaat, Ramadan dan Hari Raya', 'Tarikh Hijrah dan kiraan detik sambutan', 'Sokong Istiqamah melalui DuitNow QR'],
+      baharu: ['Waktu solat fardu ikut zon JAKIM', 'Senarai solat sunat harian dengan notifikasi', 'Mod Jumaat, Ramadan dan Hari Raya', 'Tarikh Hijrah dan kiraan detik sambutan', 'Sokong Istiqamah melalui DuitNow QR', 'Kaunter Zikir', 'Senarai semak Qiamullail', 'Kalendar Hijrah dan ingatan sambutan'],
       sokongTitle: 'SOKONG ISTIQAMAH',
       sokongIntro: 'Semua ciri kekal percuma. Jika sudi, sumbangan ikhlas anda membantu kami terus membangunkan Istiqamah. Terima kasih.',
       imbas: 'Imbas dengan mana-mana app bank atau e-dompet (DuitNow QR).',
       telefonSama: 'Guna telefon yang sama?', telefonSamaRest: ' Simpan QR, kemudian pilih gambar dari galeri dalam app bank anda.',
       simpanQR: 'Simpan QR ke galeri', qrDisimpan: 'QR disimpan dalam galeri anda.', qrGagal: 'QR tidak dapat disimpan. Cuba tangkap skrin sebaliknya.',
+      zikir: 'Zikir', zikirSub: 'Selepas solat · sasaran {n}', ketikKira: 'Ketik di mana-mana untuk mengira', daripada: 'daripada {n}',
+      setSemula: 'Set semula', getar: 'Getar: ', hidup: 'hidup', mati: 'mati', sasaran: 'Sasaran: ', senaraiZikir: 'Senarai zikir', tambah: '+ Tambah',
+      namaItem: 'Nama', bilangan: 'Bilangan', batal: 'Batal', buang: 'Buang', ubah: 'Ubah', siap: 'Siap',
+      qiam: 'Qiamullail', qiamSub: '{a} hingga {b} · sepertiga malam akhir', qiamSenarai: 'Senarai semak malam ini', qiamReset: 'Diset semula selepas Subuh',
+      qiamNota: 'NOTA', qiamNotaTeks: 'Senarai semak ini peribadi. Tambah atau buang item mengikut amalan anda.',
+      kal: 'Kalendar Hijrah', kalHero: 'SAMBUTAN SETERUSNYA', kalAkan: 'SAMBUTAN AKAN DATANG', hariLagi: '{n} hari lagi', hariIniShort: 'Hari ini',
+      kalNota: 'Tarikh Masihi ialah anggaran dan boleh berbeza satu hari. Tarikh rasmi ikut pengumuman pihak berkuasa. Loceng akan mengingatkan anda sehari sebelum.',
+      ingatan: 'Ingatan ', pagi: 'pg', petang: 'ptg',
+      sambutanNotif: 'Esok: ',
       lagiSub: 'Ibadah dan alat harian', tiba: 'Akan datang',
       segera: 'Akan datang', hadis: 'HADIS HARI INI',
       hadisAr: 'إِنَّمَا ٱلْأَعْمَالُ بِٱلنِّيَّاتِ', hadisTr: 'Sesungguhnya setiap amalan itu bergantung kepada niatnya.', hadisSrc: 'Riwayat al-Bukhari dan Muslim',
@@ -40,6 +49,7 @@ window.ISTI_I18N = {
       bulanH: ['Muharram', 'Safar', 'Rabiulawal', 'Rabiulakhir', 'Jamadilawal', 'Jamadilakhir', 'Rejab', 'Syaaban', 'Ramadan', 'Syawal', 'Zulkaedah', 'Zulhijjah'],
       ikutSistem: 'Tidak boleh pasang di sini. Pada Chrome: menu ⋮ › Tambah ke skrin utama.'
     },
+    zk: { subhanallah: ['Subhanallah', 'سُبْحَانَ ٱللَّهِ'], alhamdulillah: ['Alhamdulillah', 'ٱلْحَمْدُ لِلَّهِ'], akbar: ['Allahu Akbar', 'ٱللَّهُ أَكْبَرُ'], istighfar: ['Istighfar', 'أَسْتَغْفِرُ ٱللَّهَ'] },
     sambutan: {
       awalMuharram: 'Awal Muharram', asyura: 'Hari Asyura', maulid: 'Maulidur Rasul', israk: 'Israk dan Mikraj',
       nisfu: 'Nisfu Syaaban', awalRamadan: 'Awal Ramadan', nuzul: 'Nuzul Quran', aidilfitri: 'Hari Raya Aidilfitri',
@@ -72,7 +82,9 @@ window.ISTI_I18N = {
       taubat: ['Solat Taubat', 'Sunat · 2 rakaat'],
       hajat: ['Solat Hajat', 'Sunat · 2 rakaat'],
       tasbih: ['Solat Tasbih', 'Sunat · 4 rakaat'],
-      musafir: ['Solat Musafir', 'Sunat · 2 rakaat, sebelum atau selepas bermusafir']
+      musafir: ['Solat Musafir', 'Sunat · 2 rakaat, sebelum atau selepas bermusafir'],
+      q_taubat: ['Solat Taubat', '2 rakaat'], q_tahajud: ['Solat Tahajjud', '2–12 rakaat'], q_hajat: ['Solat Hajat', '2 rakaat'], q_tasbih: ['Solat Tasbih', '4 rakaat'],
+      q_witir: ['Solat Witir', '1–11 rakaat'], q_zikir: ['Istighfar & zikir', 'Boleh guna kaunter zikir'], q_doa: ['Doa & munajat', 'Doa selepas solat malam']
     }
   },
   en: {
@@ -99,12 +111,21 @@ window.ISTI_I18N = {
       hantar: 'Send feedback', hantarNota: 'Tap to open your email app with a ready message.',
       penafianTitle: 'DISCLAIMER',
       penafian: 'Prayer times are estimates based on JAKIM data and may differ by a few minutes by area. Please consult your local religious authority if unsure. This app is a reference, not a replacement for a teacher.',
-      baharu: ['Fard prayer times by JAKIM zone', 'Daily sunnah prayer list with notifications', 'Friday, Ramadan and Eid modes', 'Hijri date and countdown to celebrations', 'Support Istiqamah via DuitNow QR'],
+      baharu: ['Fard prayer times by JAKIM zone', 'Daily sunnah prayer list with notifications', 'Friday, Ramadan and Eid modes', 'Hijri date and countdown to celebrations', 'Support Istiqamah via DuitNow QR', 'Dhikr counter', 'Qiyam al-Layl checklist', 'Hijri calendar with celebration reminders'],
       sokongTitle: 'SUPPORT ISTIQAMAH',
       sokongIntro: 'All features stay free. If you wish, your sincere donation helps us keep building Istiqamah. Thank you.',
       imbas: 'Scan with any banking or e-wallet app (DuitNow QR).',
       telefonSama: 'Using the same phone?', telefonSamaRest: ' Save the QR, then pick the image from your gallery inside your banking app.',
       simpanQR: 'Save QR to gallery', qrDisimpan: 'QR saved to your gallery.', qrGagal: 'Could not save the QR. Try a screenshot instead.',
+      zikir: 'Dhikr', zikirSub: 'After prayer · target {n}', ketikKira: 'Tap anywhere to count', daripada: 'of {n}',
+      setSemula: 'Reset', getar: 'Vibrate: ', hidup: 'on', mati: 'off', sasaran: 'Target: ', senaraiZikir: 'Dhikr list', tambah: '+ Add',
+      namaItem: 'Name', bilangan: 'Count', batal: 'Cancel', buang: 'Remove', ubah: 'Edit', siap: 'Done',
+      qiam: 'Qiyam al-Layl', qiamSub: '{a} to {b} · last third of the night', qiamSenarai: 'Tonight’s checklist', qiamReset: 'Resets after Fajr',
+      qiamNota: 'NOTE', qiamNotaTeks: 'This checklist is personal. Add or remove items to suit your practice.',
+      kal: 'Hijri Calendar', kalHero: 'NEXT CELEBRATION', kalAkan: 'UPCOMING CELEBRATIONS', hariLagi: 'in {n} days', hariIniShort: 'Today',
+      kalNota: 'Gregorian dates are estimates and may differ by a day. Official dates follow the authorities’ announcement. The bell reminds you the day before.',
+      ingatan: 'Reminder ', pagi: 'am', petang: 'pm',
+      sambutanNotif: 'Tomorrow: ',
       lagiSub: 'Worship and daily tools', tiba: 'Coming soon',
       segera: 'Coming soon', hadis: 'HADITH OF THE DAY',
       hadisAr: 'إِنَّمَا ٱلْأَعْمَالُ بِٱلنِّيَّاتِ', hadisTr: 'Actions are judged by intentions.', hadisSrc: 'Narrated by al-Bukhari and Muslim',
@@ -115,6 +136,7 @@ window.ISTI_I18N = {
       bulanH: ['Muharram', 'Safar', 'Rabi’ al-Awwal', 'Rabi’ al-Thani', 'Jumada al-Awwal', 'Jumada al-Thani', 'Rajab', 'Sha’ban', 'Ramadan', 'Shawwal', 'Dhul Qa’dah', 'Dhul Hijjah'],
       ikutSistem: 'Cannot install here. In Chrome: menu ⋮ › Add to Home screen.'
     },
+    zk: { subhanallah: ['Subhanallah', 'سُبْحَانَ ٱللَّهِ'], alhamdulillah: ['Alhamdulillah', 'ٱلْحَمْدُ لِلَّهِ'], akbar: ['Allahu Akbar', 'ٱللَّهُ أَكْبَرُ'], istighfar: ['Istighfar', 'أَسْتَغْفِرُ ٱللَّهَ'] },
     sambutan: {
       awalMuharram: 'Islamic New Year', asyura: 'Day of Ashura', maulid: 'Mawlid al-Nabi', israk: 'Isra and Mi’raj',
       nisfu: 'Nisfu Sha’ban', awalRamadan: 'Start of Ramadan', nuzul: 'Nuzul al-Quran', aidilfitri: 'Eid al-Fitr',
@@ -147,7 +169,9 @@ window.ISTI_I18N = {
       taubat: ['Repentance Prayer', 'Sunnah · 2 rakaat'],
       hajat: ['Need Prayer (Hajat)', 'Sunnah · 2 rakaat'],
       tasbih: ['Tasbih Prayer', 'Sunnah · 4 rakaat'],
-      musafir: ['Traveller’s Prayer', 'Sunnah · 2 rakaat, before or after a journey']
+      musafir: ['Traveller’s Prayer', 'Sunnah · 2 rakaat, before or after a journey'],
+      q_taubat: ['Repentance Prayer', '2 rakaat'], q_tahajud: ['Tahajjud Prayer', '2–12 rakaat'], q_hajat: ['Need Prayer (Hajat)', '2 rakaat'], q_tasbih: ['Tasbih Prayer', '4 rakaat'],
+      q_witir: ['Witr Prayer', '1–11 rakaat'], q_zikir: ['Istighfar & dhikr', 'You can use the dhikr counter'], q_doa: ['Du’a & supplication', 'Du’a after the night prayer']
     }
   }
 };

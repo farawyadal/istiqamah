@@ -85,3 +85,43 @@ button{font-family:inherit;cursor:pointer}
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
 
 .card.qr{text-align:center}.qrbox{margin:14px auto 0;width:300px;max-width:100%;border-radius:20px;background:#fff;border:1px solid var(--line);overflow:hidden}.qrbox img{display:block;width:100%;height:auto}
+
+/* Zikir (gelap) */
+#app.dark{background:var(--navy);color:#F4EFE0}
+#app.dark .nav{border-top-color:#1C4268}
+.zhead{flex:none;padding:calc(24px + env(safe-area-inset-top,0px)) 20px 0;display:flex;align-items:flex-start;justify-content:space-between;gap:10px;background:var(--navy);color:#F4EFE0}
+.zhead .pt{font-size:24px;font-weight:700}.zhead .ps{font-size:13px;color:#B9CCE0;margin-top:2px}
+.zcur{margin-top:2px;max-width:46%;padding:10px 14px;border-radius:22px;border:1px solid #2B5681;background:#123B63;font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.zscroll{flex:1;min-height:0;overflow-y:auto;background:var(--navy);color:#F4EFE0;padding-bottom:16px}
+.ring{position:relative;display:block;width:260px;height:260px;margin:20px auto 0;padding:0;border:0;background:transparent;color:inherit;border-radius:50%;-webkit-user-select:none;user-select:none;touch-action:manipulation}
+.ring:active .ringsvg{opacity:.85}
+.ringsvg{position:absolute;left:0;top:0}.ringstar{position:absolute;left:30px;top:30px;opacity:.25}
+.ringin{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.zar{font-family:'Amiri',serif;font-size:34px;line-height:1.4}.zcnum{font-size:64px;font-weight:700;line-height:1.1;color:#F0D78C;font-variant-numeric:tabular-nums}.zof{font-size:14px;color:#B9CCE0}
+.zhint{text-align:center;font-size:13px;color:#B9CCE0;margin-top:10px}
+.zctl{display:flex;gap:10px;margin:14px 20px 0}
+.zctl button{flex:1;min-height:60px;border-radius:16px;border:0;background:#123B63;color:#F4EFE0;font-size:12px;font-weight:600;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:6px}
+.zlh{display:flex;align-items:center;justify-content:space-between;margin:16px 20px 0}.zlt{font-size:15px;font-weight:700}
+.zadd{min-height:44px;padding:0 14px;border-radius:22px;border:1px solid var(--gold);background:transparent;color:var(--gold);font-size:13px;font-weight:600}
+.zadd.dk{border-color:var(--green);color:#0A5C4B}
+.zlist{margin:6px 20px 0;border-radius:16px;background:#123B63;overflow:hidden}
+.zrow{display:flex;align-items:center;border-top:1px solid rgba(255,255,255,.08)}.zrow:first-child{border-top:0}
+.zrow.on{background:rgba(227,196,111,.14)}.zrow.on .zsel{color:#F0D78C;font-weight:700}
+.zsel{flex:1;min-height:48px;padding:0 16px;display:flex;align-items:center;justify-content:space-between;border:0;background:transparent;color:#F4EFE0;font-size:14px;text-align:left}
+.zn{font-variant-numeric:tabular-nums;color:#B9CCE0}
+.zdel{width:44px;height:44px;border:0;background:transparent;color:#B9CCE0;font-size:16px}
+.zform{margin:10px 20px 0;padding:12px;border-radius:16px;background:#123B63;display:flex;flex-direction:column;gap:8px}
+.inp{min-height:44px;padding:0 12px;border-radius:12px;border:1px solid #2B5681;background:#0A2540;color:#F4EFE0;font:inherit;font-size:14px}
+.zbtns{display:flex;gap:8px}.zb{flex:1;min-height:44px;border-radius:12px;border:1px solid #2B5681;background:transparent;color:#F4EFE0;font-size:14px;font-weight:600}.zb.gold{background:var(--gold);border-color:var(--gold);color:var(--navy);font-weight:700}
+/* Qiamullail */
+.qtop{position:relative;display:flex;align-items:center;gap:4px}.qtop .pt{font-size:22px}
+.qtop .back{margin-left:-12px}
+.qh{display:flex;align-items:center;justify-content:space-between}.qhl{font-size:15px;font-weight:700}.qhn{font-size:15px;font-weight:700;color:#0A5C4B;font-variant-numeric:tabular-nums}
+.bar{height:8px;border-radius:4px;background:#E2D8BC;margin-top:8px;overflow:hidden}.bar div{height:100%;background:var(--green);border-radius:4px}
+.qrow{display:grid;grid-template-columns:44px minmax(0,1fr) 44px;align-items:center;min-height:60px;margin-bottom:6px;padding:4px 4px 4px 6px;border-radius:14px;background:var(--card);border:1px solid var(--line)}
+.qrow.done{background:#DDF1E8;border-color:#9BD3BE}.qrow.done .rn{text-decoration:line-through;text-decoration-color:rgba(16,36,58,.35)}
+.qchk{width:44px;height:44px;border:0;background:transparent;display:flex;align-items:center;justify-content:center;padding:0}
+.qchk::before{content:'';position:absolute;width:26px;height:26px;border-radius:8px;border:2px solid #9A8F6E;background:#fff}
+.qchk{position:relative}.qchk svg{position:relative}.qrow.done .qchk::before{background:var(--green);border-color:var(--green)}
+.qact{display:flex;gap:10px;margin-top:8px}.qact .zadd{flex:1}
+.kh{margin:0 0 0;min-height:0}.krow{grid-template-columns:62px minmax(0,1fr) 44px;min-height:60px}.kd{font-size:13px;color:#0A5C4B}.krow.raya .kd{color:var(--gold3)}

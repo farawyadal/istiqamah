@@ -2,7 +2,7 @@
 (function () {
   'use strict';
   var L = window.IstiLogic, I18N = window.ISTI_I18N, ZONES = window.ISTI_ZONES;
-  var APP_VERSION = '0.1.1';
+  var APP_VERSION = '0.2.0';
   var params = new URLSearchParams(location.search);
   var Cap = window.Capacitor;
   var isNative = !!(Cap && Cap.isNativePlatform && Cap.isNativePlatform());
@@ -20,6 +20,17 @@
   if (params.get('lang')) S.lang = params.get('lang');
   if (params.get('tar')) S.tar = +params.get('tar');
   function persist() { save('isti.settings', S); }
+  function esc(x) { return String(x).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function uid() { return 'c' + Date.now().toString(36) + Math.floor(Math.random() * 1000).toString(36); }
+
+  var ZDEF = [['subhanallah', 33], ['alhamdulillah', 33], ['akbar', 33], ['istighfar', 100]];
+  var Z = Object.assign({ sel: 'subhanallah', counts: {}, targets: {}, vibrate: true, custom: [] }, load('isti.zikir', {}));
+  function zSave() { save('isti.zikir', Z); }
+  var QDEF = ['q_taubat', 'q_tahajud', 'q_hajat', 'q_tasbih', 'q_witir', 'q_zikir', 'q_doa'];
+  var Q = Object.assign({ items: QDEF.map(function (k) { return { id: k, key: k }; }), night: '', done: [] }, load('isti.qiam', {}));
+  function qSave() { save('isti.qiam', Q); }
+  var SBELL_DEF = { aidilfitri: 1, aidiladha: 1, awalRamadan: 1 };
+  function sbellOn(k) { return S.sbells && S.sbells[k] !== undefined ? !!S.sbells[k] : !!SBELL_DEF[k]; }
 
   var fakeNow = params.get('now') ? new Date(params.get('now')) : null;
   var fakeStart = Date.now();
@@ -112,6 +123,10 @@
     home: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h5v-6h4v6h5V10"/></svg>',
     grid: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="6" height="6" rx="1.5"/><rect x="14" y="4" width="6" height="6" rx="1.5"/><rect x="4" y="14" width="6" height="6" rx="1.5"/><rect x="14" y="14" width="6" height="6" rx="1.5"/></svg>',
     bell: function (on) { return '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 17V11a6 6 0 0 1 12 0v6l1.5 2h-15z"/><path d="M10 21h4"/>' + (on ? '' : '<path d="M4 4l16 16"/>') + '</svg>'; },
+    moon: '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#7A5C12" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>',
+    cal: '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#7A5C12" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></svg>',
+    tasbih: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8" stroke-width="3" stroke-dasharray="1 4.2"/><circle cx="12" cy="12" r="1.5"/></svg>',
+    chk: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
     back: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>',
     gear: '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#7A5C12" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></svg>',
     info: '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#7A5C12" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></svg>',
@@ -120,10 +135,11 @@
   };
 
   function nav() {
-    var a = screen === 'utama' ? 'on' : '';
-    var b = screen === 'lagi' || screen === 'tetapan' || screen === 'tentang' ? 'on' : '';
-    return '<nav class="nav"><button data-go="utama" class="' + a + '" aria-current="' + (a ? 'page' : 'false') + '">' + ICON.home + u('utama') + '</button>' +
-      '<button data-go="lagi" class="' + b + '" aria-current="' + (b ? 'page' : 'false') + '">' + ICON.grid + u('lagi') + '</button></nav>';
+    var lagiGroup = ['lagi', 'tetapan', 'tentang', 'qiam', 'kal'].indexOf(screen) >= 0;
+    function tab(go, on, icon, label) {
+      return '<button data-go="' + go + '" class="' + (on ? 'on' : '') + '" aria-current="' + (on ? 'page' : 'false') + '">' + icon + label + '</button>';
+    }
+    return '<nav class="nav">' + tab('utama', screen === 'utama', ICON.home, u('utama')) + tab('zikir', screen === 'zikir', ICON.tasbih, u('zikir')) + tab('lagi', lagiGroup, ICON.grid, u('lagi')) + '</nav>';
   }
 
   function dateLine(d, h) {
@@ -220,6 +236,8 @@
   function viewLagi() {
     return '<header class="banner plain">' + ICON.star + '<div class="pt">' + u('lagi') + '</div><div class="ps">' + u('lagiSub') + '</div></header>' +
       '<main class="scroll"><div class="grid">' +
+      '<button class="tile" data-go="qiam">' + ICON.moon + u('qiam') + '</button>' +
+      '<button class="tile" data-go="kal">' + ICON.cal + u('kal') + '</button>' +
       '<button class="tile" data-go="tetapan">' + ICON.gear + u('tetapan') + '</button>' +
       '<button class="tile" data-go="tentang">' + ICON.info + u('tentang') + '</button></div></main>';
   }
@@ -273,6 +291,106 @@
       '<div class="foot"><b>Istiqamah</b> • Developed by FaridAssamani • ©2026 • v' + APP_VERSION + '</div></main>';
   }
 
+  function fmt12(hhmm) {
+    var h = parseInt(hhmm.slice(0, 2), 10), m = hhmm.slice(3, 5);
+    var ap = h < 12 ? u('pagi') : u('petang');
+    h = h % 12; if (h === 0) h = 12;
+    return h + ':' + m + ' ' + ap;
+  }
+
+  /* ----- Zikir ----- */
+  function zList() {
+    return ZDEF.map(function (d) { var z = T().zk[d[0]]; return { id: d[0], n: z[0], ar: z[1], t: d[1] }; })
+      .concat(Z.custom.map(function (c) { return { id: c.id, n: c.n, ar: '', t: c.t, custom: true }; }));
+  }
+  function zCur() { var l = zList(); return l.filter(function (x) { return x.id === Z.sel; })[0] || l[0]; }
+  function zTarget(it) { return Z.targets[it.id] || it.t; }
+  var CIRC = 691.15, zForm = false;
+  function viewZikir() {
+    var it = zCur(), tg = zTarget(it), c = Z.counts[it.id] || 0, frac = Math.min(1, c / tg);
+    var rows = zList().map(function (x) {
+      return '<div class="zrow' + (x.id === it.id ? ' on' : '') + '"><button class="zsel" data-zsel="' + esc(x.id) + '" aria-pressed="' + (x.id === it.id) + '"><span>' + esc(x.n) + '</span><span class="zn">× ' + zTarget(x) + '</span></button>' +
+        (x.custom ? '<button class="zdel" data-zdel="' + esc(x.id) + '" aria-label="' + u('buang') + ' ' + esc(x.n) + '">✕</button>' : '') + '</div>';
+    }).join('');
+    var form = zForm ? '<div class="zform"><input id="zname" class="inp" maxlength="40" placeholder="' + u('namaItem') + '" aria-label="' + u('namaItem') + '"><input id="zcnt" class="inp" type="number" inputmode="numeric" min="1" max="100000" value="33" aria-label="' + u('bilangan') + '"><div class="zbtns"><button class="zb gold" data-act="zsave">' + u('simpan') + '</button><button class="zb" data-act="zcancel">' + u('batal') + '</button></div></div>' : '';
+    return '<div class="zhead"><div><div class="pt">' + u('zikir') + '</div><div class="ps" id="zsub">' + u('zikirSub').replace('{n}', tg) + '</div></div><div class="zcur">' + esc(it.n) + '</div></div>' +
+      '<div class="zscroll"><button class="ring" data-act="zcount" aria-label="' + esc(it.n) + ' ' + u('ketikKira') + '">' +
+      '<svg class="ringsvg" width="260" height="260" viewBox="0 0 260 260" fill="none" aria-hidden="true"><circle cx="130" cy="130" r="110" stroke="#1C4268" stroke-width="12"/><circle id="zr" cx="130" cy="130" r="110" stroke="#E3C46F" stroke-width="12" stroke-linecap="round" stroke-dasharray="' + (frac * CIRC).toFixed(1) + ' ' + CIRC + '" transform="rotate(-90 130 130)"/></svg>' +
+      '<svg width="200" height="200" viewBox="0 0 100 100" fill="none" stroke="#E3C46F" stroke-width="0.6" aria-hidden="true" class="ringstar"><rect x="18" y="18" width="64" height="64"/><rect x="18" y="18" width="64" height="64" transform="rotate(45 50 50)"/></svg>' +
+      '<span class="ringin"><span class="zar" lang="ar" dir="rtl">' + (it.ar ? esc(it.ar) : '&nbsp;') + '</span><span class="zcnum" id="zc">' + c + '</span><span class="zof" id="zof">' + u('daripada').replace('{n}', tg) + '</span></span></button>' +
+      '<div class="zhint">' + u('ketikKira') + '</div>' +
+      '<div class="zctl"><button data-act="zreset">' + '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12a8 8 0 1 0 3-6.2"/><path d="M4 4v4h4"/></svg>' + u('setSemula') + '</button>' +
+      '<button data-act="zvib" aria-pressed="' + !!Z.vibrate + '"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="3" width="8" height="18" rx="2"/><path d="M4 8v8M20 8v8"/></svg>' + u('getar') + (Z.vibrate ? u('hidup') : u('mati')) + '</button>' +
+      '<button data-act="ztarget"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></svg>' + u('sasaran') + tg + '</button></div>' +
+      '<div class="zlh"><div class="zlt">' + u('senaraiZikir') + '</div><button class="zadd" data-act="zadd">' + u('tambah') + '</button></div>' + form +
+      '<div class="zlist">' + rows + '</div></div>';
+  }
+  function zRefresh() {
+    var it = zCur(), tg = zTarget(it), c = Z.counts[it.id] || 0;
+    var zc = document.getElementById('zc'); if (!zc) return;
+    zc.textContent = c;
+    document.getElementById('zr').setAttribute('stroke-dasharray', (Math.min(1, c / tg) * CIRC).toFixed(1) + ' ' + CIRC);
+    document.getElementById('zof').textContent = u('daripada').replace('{n}', tg);
+  }
+  function buzz(p) { try { if (Z.vibrate && navigator.vibrate) navigator.vibrate(p); } catch (e) { /* abaikan */ } }
+
+  /* ----- Qiamullail ----- */
+  var qEdit = false, qForm = false;
+  function nightId() {
+    var d = now(), td = dayModel(d, adjustFor(d)), nm = d.getHours() * 60 + d.getMinutes();
+    var fajr = td ? L.mins(td.t.fajr) : 355;
+    return L.ymd(nm < fajr ? L.addDays(d, -1) : d);
+  }
+  function qSync() { var n = nightId(); if (Q.night !== n) { Q.night = n; Q.done = []; qSave(); } }
+  function qName(i) { return i.key ? (T().items[i.key] || [i.key, ''])[0] : i.n; }
+  function qSub(i) { return i.key ? (T().items[i.key] || ['', ''])[1] : (i.s || ''); }
+  function viewQiam() {
+    qSync();
+    var d = now(), td = dayModel(d, adjustFor(d));
+    var range = '';
+    if (td) {
+      var taj = td.items.filter(function (x) { return x.k === 'tahajud'; })[0];
+      range = u('qiamSub').replace('{a}', fmt12(taj.t)).replace('{b}', fmt12(td.t.fajr.slice(0, 5)));
+    }
+    var total = Q.items.length, done = Q.items.filter(function (i) { return Q.done.indexOf(i.id) >= 0; }).length;
+    var rows = Q.items.map(function (i) {
+      var on = Q.done.indexOf(i.id) >= 0;
+      return '<div class="qrow' + (on ? ' done' : '') + '"><button class="qchk" role="checkbox" aria-checked="' + on + '" data-qchk="' + esc(i.id) + '" aria-label="' + esc(qName(i)) + '">' + (on ? ICON.chk : '') + '</button>' +
+        '<div class="qt"><div class="rn">' + esc(qName(i)) + '</div><div class="rs">' + esc(qSub(i)) + '</div></div>' +
+        (qEdit ? '<button class="zdel" data-qdel="' + esc(i.id) + '" aria-label="' + u('buang') + ' ' + esc(qName(i)) + '">✕</button>' : '<span></span>') + '</div>';
+    }).join('');
+    var form = qForm ? '<div class="zform"><input id="qname" class="inp" maxlength="50" placeholder="' + u('namaItem') + '" aria-label="' + u('namaItem') + '"><div class="zbtns"><button class="zb gold" data-act="qsave">' + u('simpan') + '</button><button class="zb" data-act="qcancel">' + u('batal') + '</button></div></div>' : '';
+    return '<header class="banner plain">' + ICON.star + '<div class="qtop"><button class="back" data-go="lagi" aria-label="' + u('kembali') + '">' + ICON.back + '</button><div><div class="pt">' + u('qiam') + '</div><div class="ps">' + range + '</div></div></div></header>' +
+      '<main class="scroll"><div class="qh"><div class="qhl">' + u('qiamSenarai') + '</div><div class="qhn">' + done + ' / ' + total + '</div></div>' +
+      '<div class="bar"><div style="width:' + (total ? Math.round(done / total * 100) : 0) + '%"></div></div><div class="note" style="margin:6px 0 12px">' + u('qiamReset') + '</div>' +
+      rows + form +
+      '<div class="qact"><button class="zadd dk" data-act="qadd">' + u('tambah') + '</button><button class="zadd dk" data-act="qedit">' + (qEdit ? u('siap') : u('ubah')) + '</button></div>' +
+      '<div class="card dis" style="margin-top:14px"><div class="lbl">' + u('qiamNota') + '</div><div class="dt">' + u('qiamNotaTeks') + '</div></div></main>';
+  }
+
+  /* ----- Kalendar Hijrah ----- */
+  function calEvents() {
+    var today = now(), adj = adjustFor(today), seen = {}, out = [];
+    for (var i = 0; i <= 420; i++) {
+      var dt = L.addDays(today, i), h = L.hijriAt(dt, adj), k = L.sambutanOf(h);
+      if (k && !seen[k]) { seen[k] = 1; out.push({ k: k, days: i, date: dt, h: h }); }
+    }
+    return out;
+  }
+  function viewKal() {
+    var t = T(), ev = calEvents();
+    function gline(e) { var d = e.date; return t.ui.hari[d.getDay()] + ', ' + d.getDate() + ' ' + t.ui.bulanM[d.getMonth()] + ' ' + d.getFullYear() + ' (' + t.ui.anggaran + ')'; }
+    function days(e) { return e.days === 0 ? t.ui.hariIniShort : t.ui.hariLagi.replace('{n}', e.days); }
+    var hero = ev[0] ? '<section class="hero kh">' + ICON.star.replace('class="deco"', 'class="deco deco2"') + '<div class="hl">' + t.ui.kalHero + '</div><div class="hn">' + t.sambutan[ev[0].k] + '</div><div class="hs">' + ev[0].h.d + ' ' + t.ui.bulanH[ev[0].h.m - 1] + ' ' + ev[0].h.y + ' · ' + gline(ev[0]) + '</div><div class="hline" style="border:0;padding-top:2px;margin-top:4px;min-height:0">' + days(ev[0]) + '</div></section>' : '';
+    var rows = ev.map(function (e) {
+      var on = sbellOn(e.k), big = !!SBELL_DEF[e.k], name = t.sambutan[e.k];
+      return '<div class="row krow' + (big ? ' raya' : '') + '"><div class="rt kd">' + (e.days === 0 ? t.ui.hariIniShort : e.days + ' ' + (S.lang === 'en' ? 'd' : 'hari')) + '</div><div><div class="rn">' + name + '</div><div class="rs">' + e.h.d + ' ' + t.ui.bulanH[e.h.m - 1] + ' ' + e.h.y + ' · ' + gline(e) + '</div></div>' +
+        '<button class="bell' + (on ? ' on' : '') + '" data-sbell="' + e.k + '" aria-pressed="' + on + '" aria-label="' + t.ui.ingatan + name + '">' + ICON.bell(on) + '</button></div>';
+    }).join('');
+    return '<div class="topbar"><button class="back" data-go="lagi" aria-label="' + u('kembali') + '">' + ICON.back + '</button><div class="tt">' + u('kal') + '</div></div>' +
+      '<main class="scroll">' + hero + '<div class="sh" style="margin:14px 4px 8px">' + u('kalAkan') + '</div>' + rows + '<div class="note" style="margin:10px 4px 0">' + u('kalNota') + '</div></main>';
+  }
+
   var toastTimer = null;
   function toast(msg) {
     var el = document.getElementById('toast');
@@ -286,10 +404,14 @@
     var html;
     if (firstRun) screen = 'tetapan';
     if (screen === 'utama') html = viewUtama();
+    else if (screen === 'zikir') html = viewZikir();
+    else if (screen === 'qiam') html = viewQiam();
+    else if (screen === 'kal') html = viewKal();
     else if (screen === 'lagi') html = viewLagi();
     else if (screen === 'tetapan') html = viewTetapan();
     else html = viewTentang();
     var withNav = !firstRun;
+    root.className = screen === 'zikir' ? 'dark' : '';
     root.innerHTML = '<div class="screen">' + html + '</div>' + (withNav ? nav() : '');
     document.documentElement.lang = S.lang === 'en' ? 'en' : 'ms';
     var l1 = document.getElementById('list');
@@ -305,7 +427,7 @@
 
   function go(s, push) {
     screen = s;
-    if (push && (s === 'tetapan' || s === 'tentang')) history.pushState({ s: s }, '');
+    if (push && (s === 'tetapan' || s === 'tentang' || s === 'qiam' || s === 'kal')) history.pushState({ s: s }, '');
     render();
     if (s === 'utama') refreshData(false);
   }
@@ -343,6 +465,17 @@
             });
           });
         }
+        calEvents().forEach(function (e, idx) {
+          if (e.days > 8 || !sbellOn(e.k)) return;
+          var at = new Date(e.date.getFullYear(), e.date.getMonth(), e.date.getDate() - 1, 20, 0, 0);
+          if (at.getTime() <= nowTs + 5000) return;
+          list.push({
+            id: 5000000 + (L.dayIndex(e.date) - 18000) * 10 + idx,
+            title: T().sambutan[e.k], body: u('sambutanNotif') + T().sambutan[e.k],
+            schedule: { at: at, allowWhileIdle: true },
+            channelId: 'waktu', smallIcon: 'ic_stat_istiqamah', iconColor: '#0E7C66'
+          });
+        });
         return list.length ? LN.schedule({ notifications: list }) : null;
       })
       .catch(function () { /* izin belum diberi */ });
@@ -383,7 +516,7 @@
 
   /* ---------- acara ---------- */
   root.addEventListener('click', function (e) {
-    var el = e.target.closest('[data-go],[data-filter],[data-bell],[data-tar],[data-set],[data-act]');
+    var el = e.target.closest('[data-go],[data-filter],[data-bell],[data-tar],[data-set],[data-act],[data-zsel],[data-zdel],[data-qchk],[data-qdel],[data-sbell]');
     if (!el) return;
     if (el.dataset.go) return go(el.dataset.go, true);
     if (el.dataset.filter) { filter = el.dataset.filter; return render(); }
@@ -399,7 +532,47 @@
       else if (n === 'tar') S.tar = +v;
       persist(); reschedule(); return render();
     }
+    if (el.dataset.zsel) { Z.sel = el.dataset.zsel; zSave(); return render(); }
+    if (el.dataset.zdel) {
+      Z.custom = Z.custom.filter(function (c) { return c.id !== el.dataset.zdel; });
+      if (Z.sel === el.dataset.zdel) Z.sel = 'subhanallah';
+      zSave(); return render();
+    }
+    if (el.dataset.qchk) {
+      var qi = Q.done.indexOf(el.dataset.qchk);
+      if (qi >= 0) Q.done.splice(qi, 1); else Q.done.push(el.dataset.qchk);
+      qSave(); return render();
+    }
+    if (el.dataset.qdel) { Q.items = Q.items.filter(function (i) { return i.id !== el.dataset.qdel; }); qSave(); return render(); }
+    if (el.dataset.sbell) {
+      var sk = el.dataset.sbell; S.sbells = S.sbells || {}; S.sbells[sk] = sbellOn(sk) ? 0 : 1; persist(); reschedule(); return render();
+    }
     var a = el.dataset.act;
+    if (a === 'zcount') {
+      var zi = zCur(), zt = zTarget(zi), n1 = (Z.counts[zi.id] || 0) + 1;
+      Z.counts[zi.id] = n1; zSave(); buzz(n1 === zt ? [80, 50, 80] : 15); return zRefresh();
+    }
+    if (a === 'zreset') { Z.counts[zCur().id] = 0; zSave(); return zRefresh(); }
+    if (a === 'zvib') { Z.vibrate = !Z.vibrate; zSave(); buzz(30); return render(); }
+    if (a === 'ztarget') {
+      var cur = zCur(), opts = [33, 99, 100], ix = opts.indexOf(zTarget(cur));
+      Z.targets[cur.id] = opts[(ix + 1) % opts.length]; zSave(); return render();
+    }
+    if (a === 'zadd') { zForm = true; return render(); }
+    if (a === 'zcancel') { zForm = false; return render(); }
+    if (a === 'zsave') {
+      var zn = (document.getElementById('zname').value || '').trim(), zc2 = parseInt(document.getElementById('zcnt').value, 10);
+      if (!zn) return document.getElementById('zname').focus();
+      var cid = uid(); Z.custom.push({ id: cid, n: zn, t: zc2 > 0 ? zc2 : 33 }); Z.sel = cid; zForm = false; zSave(); return render();
+    }
+    if (a === 'qadd') { qForm = true; return render(); }
+    if (a === 'qcancel') { qForm = false; return render(); }
+    if (a === 'qedit') { qEdit = !qEdit; return render(); }
+    if (a === 'qsave') {
+      var qn = (document.getElementById('qname').value || '').trim();
+      if (!qn) return document.getElementById('qname').focus();
+      Q.items.push({ id: uid(), n: qn, s: '' }); qForm = false; qSave(); return render();
+    }
     if (a === 'retry' || a === 'refresh') return refreshData(true).then(function (ok) { if (a === 'refresh' && ok) toast(u('dikemaskini')); });
     if (a === 'perm') return askPermission();
     if (a === 'exact') return askExact();
