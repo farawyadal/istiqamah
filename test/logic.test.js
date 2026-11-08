@@ -78,4 +78,15 @@ ok('parse JAKIM', () => {
 
 ok('bellOn', () => { assert.ok(L.bellOn({}, 'subuh')); assert.ok(!L.bellOn({}, 'isyraq')); assert.ok(!L.bellOn({ subuh: 0 }, 'subuh')); });
 
+ok('kiblat', () => {
+  const pen = L.qiblaBearing(5.4164, 100.3327); // Pulau Pinang ~292
+  assert.ok(Math.abs(pen - 292) < 1.5, String(pen));
+  const kl = L.qiblaBearing(3.139, 101.6869); // KL ~292.6
+  assert.ok(Math.abs(kl - 292.6) < 1.5, String(kl));
+  assert.strictEqual(L.compassIndex(292), 6);
+  assert.strictEqual(L.compassIndex(359), 0);
+  assert.strictEqual(L.angDiff(350, 10), 20);
+  assert.strictEqual(L.angDiff(10, 350), -20);
+});
+
 console.log(n + ' ujian lulus');

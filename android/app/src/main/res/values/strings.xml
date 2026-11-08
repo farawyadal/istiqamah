@@ -4,4 +4,9 @@
     <string name="title_activity_main">Istiqamah</string>
     <string name="package_name">com.farawyadal.istiqamah</string>
     <string name="custom_url_scheme">com.farawyadal.istiqamah</string>
+    <string name="wd_next">Solat fardu seterusnya dengan kiraan detik</string>
+    <string name="wd_sunat">Solat sunat seterusnya</string>
+    <string name="wd_waktu">Waktu solat hari ini</string>
+    <string name="wd_zikir">Kaunter zikir, ketik untuk mengira</string>
+    <string name="wd_tarikh">Tarikh Masihi dan Hijrah</string>
 </resources>

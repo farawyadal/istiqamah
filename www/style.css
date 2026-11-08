@@ -125,3 +125,14 @@ button{font-family:inherit;cursor:pointer}
 .qchk{position:relative}.qchk svg{position:relative}.qrow.done .qchk::before{background:var(--green);border-color:var(--green)}
 .qact{display:flex;gap:10px;margin-top:8px}.qact .zadd{flex:1}
 .kh{margin:0 0 0;min-height:0}.krow{grid-template-columns:62px minmax(0,1fr) 44px;min-height:60px}.kd{font-size:13px;color:#0A5C4B}.krow.raya .kd{color:var(--gold3)}
+
+/* Kiblat */
+.kbm{background:var(--navy);color:#F4EFE0;padding-top:6px}
+.kbh{text-align:center}.kbl{font-size:12px;font-weight:700;letter-spacing:.06em;color:var(--gold)}.kbdeg{font-size:44px;font-weight:700;line-height:1.1;margin-top:2px;font-variant-numeric:tabular-nums}.kbsub{font-size:14px;color:#B9CCE0;min-height:20px}
+.kbwrap{position:relative;width:300px;height:300px;margin:22px auto 0}
+.kbdial{position:absolute;left:0;top:0;width:300px;height:300px;will-change:transform}
+.kbptr{position:absolute;left:0;top:0}
+.kbstat{text-align:center;margin-top:14px;font-size:15px;font-weight:700;min-height:44px;padding:0 8px}.kbstat.ok{color:#3DDC97}
+.kbnote{margin:6px 0 0;padding:12px 14px;border-radius:16px;background:#123B63;font-size:12px;line-height:1.55;color:#B9CCE0}
+.kbbtn{display:block;margin:12px auto 0;width:100%;min-height:48px;border-radius:14px;border:1px solid var(--gold);background:transparent;color:var(--gold);font-size:14px;font-weight:700}
+#app.dark .scroll.kbm{background:var(--navy)}

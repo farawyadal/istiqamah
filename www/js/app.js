@@ -2,7 +2,7 @@
 (function () {
   'use strict';
   var L = window.IstiLogic, I18N = window.ISTI_I18N, ZONES = window.ISTI_ZONES;
-  var APP_VERSION = '0.2.0';
+  var APP_VERSION = '0.3.0';
   var params = new URLSearchParams(location.search);
   var Cap = window.Capacitor;
   var isNative = !!(Cap && Cap.isNativePlatform && Cap.isNativePlatform());
@@ -123,6 +123,7 @@
     home: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h5v-6h4v6h5V10"/></svg>',
     grid: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="6" height="6" rx="1.5"/><rect x="14" y="4" width="6" height="6" rx="1.5"/><rect x="4" y="14" width="6" height="6" rx="1.5"/><rect x="14" y="14" width="6" height="6" rx="1.5"/></svg>',
     bell: function (on) { return '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 17V11a6 6 0 0 1 12 0v6l1.5 2h-15z"/><path d="M10 21h4"/>' + (on ? '' : '<path d="M4 4l16 16"/>') + '</svg>'; },
+    compass: '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#7A5C12" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></svg>',
     moon: '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#7A5C12" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>',
     cal: '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#7A5C12" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></svg>',
     tasbih: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8" stroke-width="3" stroke-dasharray="1 4.2"/><circle cx="12" cy="12" r="1.5"/></svg>',
@@ -135,7 +136,7 @@
   };
 
   function nav() {
-    var lagiGroup = ['lagi', 'tetapan', 'tentang', 'qiam', 'kal'].indexOf(screen) >= 0;
+    var lagiGroup = ['lagi', 'tetapan', 'tentang', 'qiam', 'kal', 'kiblat'].indexOf(screen) >= 0;
     function tab(go, on, icon, label) {
       return '<button data-go="' + go + '" class="' + (on ? 'on' : '') + '" aria-current="' + (on ? 'page' : 'false') + '">' + icon + label + '</button>';
     }
@@ -238,6 +239,7 @@
       '<main class="scroll"><div class="grid">' +
       '<button class="tile" data-go="qiam">' + ICON.moon + u('qiam') + '</button>' +
       '<button class="tile" data-go="kal">' + ICON.cal + u('kal') + '</button>' +
+      '<button class="tile" data-go="kiblat">' + ICON.compass + u('kiblat') + '</button>' +
       '<button class="tile" data-go="tetapan">' + ICON.gear + u('tetapan') + '</button>' +
       '<button class="tile" data-go="tentang">' + ICON.info + u('tentang') + '</button></div></main>';
   }
@@ -391,6 +393,122 @@
       '<main class="scroll">' + hero + '<div class="sh" style="margin:14px 4px 8px">' + u('kalAkan') + '</div>' + rows + '<div class="note" style="margin:10px 4px 0">' + u('kalNota') + '</div></main>';
   }
 
+  /* ----- Kiblat ----- */
+  var kb = { loc: load('isti.loc', null), h: null, aligned: false, finding: false, noSensor: false, err: '', timer: null, on: false };
+  function kbBearing() { return kb.loc ? L.qiblaBearing(kb.loc.lat, kb.loc.lng) : null; }
+  function viewKiblat() {
+    var b = kbBearing(), t = T().ui;
+    var dir = b === null ? '' : t.mata[L.compassIndex(b)] + ' · ' + zoneShort(S.zone);
+    var lt = t.hurufMata;
+    return '<div class="topbar"><button class="back" data-go="lagi" aria-label="' + u('kembali') + '">' + ICON.back + '</button><div class="tt">' + u('kiblat') + '</div></div>' +
+      '<main class="scroll kbm"><div class="kbh"><div class="kbl">' + u('kbLabel') + '</div><div class="kbdeg" id="kbdeg">' + (b === null ? '—' : Math.round(b) + '°') + '</div><div class="kbsub" id="kbsub">' + dir + '</div></div>' +
+      '<div class="kbwrap"><div id="kbdial" class="kbdial"><svg width="300" height="300" viewBox="0 0 300 300" fill="none" aria-hidden="true">' +
+      '<circle cx="150" cy="150" r="140" stroke="#1C4268" stroke-width="2" fill="#0C2D4D"/><circle cx="150" cy="150" r="118" stroke="#1C4268" stroke-width="1"/>' +
+      '<g stroke="#2B5681" stroke-width="2"><path d="M150 14v14M150 272v14M14 150h14M272 150h14"/></g><g stroke="#2B5681" stroke-width="1"><path d="M246 54l-8 8M54 54l8 8M246 246l-8-8M54 246l8-8"/></g>' +
+      '<text x="150" y="50" text-anchor="middle" fill="#F4EFE0" font-size="16" font-weight="700" font-family="Plus Jakarta Sans,sans-serif">' + lt[0] + '</text>' +
+      '<text x="256" y="156" text-anchor="middle" fill="#9DB6CF" font-size="14" font-family="Plus Jakarta Sans,sans-serif">' + lt[1] + '</text>' +
+      '<text x="150" y="266" text-anchor="middle" fill="#9DB6CF" font-size="14" font-family="Plus Jakarta Sans,sans-serif">' + lt[2] + '</text>' +
+      '<text x="44" y="156" text-anchor="middle" fill="#9DB6CF" font-size="14" font-family="Plus Jakarta Sans,sans-serif">' + lt[3] + '</text>' +
+      (b === null ? '' : '<g transform="rotate(' + b.toFixed(1) + ' 150 150)"><path d="M150 150V40" stroke="#E3C46F" stroke-width="2" stroke-dasharray="4 5"/><rect x="136" y="14" width="28" height="28" rx="6" fill="#E3C46F"/><rect x="141" y="22" width="18" height="16" fill="#0A2540"/><rect x="141" y="25" width="18" height="3" fill="#E3C46F"/></g>') +
+      '</svg></div><svg class="kbptr" width="300" height="300" viewBox="0 0 300 300" fill="none" aria-hidden="true"><path id="kbptr" d="M150 6l9 16h-18z" fill="#F4EFE0"/><circle cx="150" cy="150" r="6" fill="#E3C46F"/></svg></div>' +
+      '<div class="kbstat" id="kbstat" role="status" aria-live="polite"></div>' +
+      '<div class="kbnote">' + u('kbTips') + '</div>' +
+      '<button class="kbbtn" data-act="kbloc">' + u('kbKemas') + '</button></main>';
+  }
+  function kbStatusText(diff) {
+    if (kb.finding) return u('kbMencari');
+    if (!kb.loc) return kb.err || u('kbTiadaLoc');
+    if (kb.noSensor) return u('kbTiadaSensor');
+    if (kb.h === null) return '';
+    if (kb.aligned) return u('kbTepat');
+    return diff < 0 ? u('kbKiri') : u('kbKanan');
+  }
+  function kbUpdate() {
+    var dial = document.getElementById('kbdial'); if (!dial) return;
+    var b = kbBearing(), diff = 0;
+    var heading = kb.h === null ? 0 : kb.h;
+    dial.style.transform = 'rotate(' + (-heading).toFixed(1) + 'deg)';
+    if (b !== null && kb.h !== null) diff = L.angDiff(kb.h, b);
+    var al = b !== null && kb.h !== null && Math.abs(diff) <= 4;
+    if (al && !kb.aligned) { try { if (navigator.vibrate) navigator.vibrate(40); } catch (e) { /* abaikan */ } }
+    kb.aligned = al;
+    var st = document.getElementById('kbstat'); st.textContent = kbStatusText(diff); st.className = 'kbstat' + (al ? ' ok' : '');
+    document.getElementById('kbptr').setAttribute('fill', al ? '#3DDC97' : '#F4EFE0');
+  }
+  function kbOri(e) {
+    var h = null;
+    if (typeof e.webkitCompassHeading === 'number') h = e.webkitCompassHeading;
+    else if (e.alpha !== null && e.alpha !== undefined && (e.absolute || e.type === 'deviceorientationabsolute')) h = (360 - e.alpha) % 360;
+    if (h === null) return;
+    kb.noSensor = false;
+    kb.h = kb.h === null ? h : (kb.h + 0.3 * L.angDiff(kb.h, h) + 360) % 360;
+    kbUpdate();
+  }
+  function kbStart() {
+    if (kb.on) return; kb.on = true; kb.h = null; kb.noSensor = false;
+    window.addEventListener('deviceorientationabsolute', kbOri, true);
+    window.addEventListener('deviceorientation', kbOri, true);
+    clearTimeout(kb.timer);
+    kb.timer = setTimeout(function () { if (kb.h === null) { kb.noSensor = true; kbUpdate(); } }, 2000);
+    if (!kb.loc) kbLocate();
+  }
+  function kbStop() {
+    if (!kb.on) return; kb.on = false; clearTimeout(kb.timer);
+    window.removeEventListener('deviceorientationabsolute', kbOri, true);
+    window.removeEventListener('deviceorientation', kbOri, true);
+  }
+  function kbLocate() {
+    if (!navigator.geolocation) { kb.err = u('kbTiadaLoc'); return kbUpdate(); }
+    kb.finding = true; kb.err = ''; kbUpdate();
+    navigator.geolocation.getCurrentPosition(function (pos) {
+      kb.finding = false; kb.loc = { lat: pos.coords.latitude, lng: pos.coords.longitude }; save('isti.loc', kb.loc);
+      if (screen === 'kiblat') render();
+    }, function () {
+      kb.finding = false; kb.err = u('kbTiadaLoc'); kbUpdate();
+    }, { enableHighAccuracy: false, timeout: 15000, maximumAge: 600000 });
+  }
+
+  /* ----- Widget skrin utama (Android) ----- */
+  var WGT = isNative && Cap.Plugins ? Cap.Plugins.IstiWidget : null;
+  var wReady = !WGT, wTimer = null;
+  function widgetSync() {
+    if (!WGT || !wReady) return;
+    clearTimeout(wTimer);
+    wTimer = setTimeout(doWidgetSync, 600);
+  }
+  function doWidgetSync() {
+    var today = now(), adj = adjustFor(today), days = [], t = T();
+    for (var i = 0; i < 4; i++) {
+      var date = L.addDays(today, i), dm = dayModel(date, adj);
+      if (!dm) continue;
+      var tt = dm.t;
+      days.push({
+        ymd: L.ymd(date),
+        hijri: dm.h.d + ' ' + t.ui.bulanH[dm.h.m - 1] + ' ' + dm.h.y,
+        p: { subuh: tt.fajr.slice(0, 5), syuruk: tt.syuruk.slice(0, 5), zohor: tt.dhuhr.slice(0, 5), asar: tt.asr.slice(0, 5), maghrib: tt.maghrib.slice(0, 5), isyak: tt.isha.slice(0, 5) },
+        items: dm.items.map(function (it) {
+          var tx = itemText(it.k);
+          return { n: tx.n, s: tx.s.split(' · ').slice(1).join(' · '), t: it.t, f: it.fardu ? 1 : 0 };
+        })
+      });
+    }
+    var labels = {
+      seterusnya: t.ui.wSeterusnya, sunatNext: t.ui.wSunat, tinggal: t.ui.wTinggal, zikirTap: t.ui.wZikir,
+      am: t.ui.pagi, pm: t.ui.petang, dow: t.ui.hari, mon: t.ui.bulanM,
+      subuh: t.items.subuh[0], syuruk: t.ui.syuruk, zohor: t.items.zohor[0], asar: t.items.asar[0], maghrib: t.items.maghrib[0], isyak: t.items.isyak[0]
+    };
+    var zc = zCur();
+    WGT.sync({ data: JSON.stringify({ zone: zoneShort(S.zone), days: days, labels: labels }), zid: zc.id, zn: zc.n, zt: zTarget(zc), zc: Z.counts[zc.id] || 0 }).catch(function () { /* abaikan */ });
+  }
+  function pullZikir() {
+    if (!WGT) return Promise.resolve();
+    return WGT.getZikir().then(function (r) {
+      if (r && r.id && typeof r.c === 'number' && zList().some(function (x) { return x.id === r.id; })) {
+        if ((Z.counts[r.id] || 0) !== r.c) { Z.counts[r.id] = r.c; zSave(); if (screen === 'zikir') render(); }
+      }
+    }).catch(function () { /* abaikan */ }).then(function () { wReady = true; widgetSync(); });
+  }
+
   var toastTimer = null;
   function toast(msg) {
     var el = document.getElementById('toast');
@@ -407,13 +525,16 @@
     else if (screen === 'zikir') html = viewZikir();
     else if (screen === 'qiam') html = viewQiam();
     else if (screen === 'kal') html = viewKal();
+    else if (screen === 'kiblat') html = viewKiblat();
     else if (screen === 'lagi') html = viewLagi();
     else if (screen === 'tetapan') html = viewTetapan();
     else html = viewTentang();
     var withNav = !firstRun;
-    root.className = screen === 'zikir' ? 'dark' : '';
+    root.className = screen === 'zikir' || screen === 'kiblat' ? 'dark' : '';
     root.innerHTML = '<div class="screen">' + html + '</div>' + (withNav ? nav() : '');
     document.documentElement.lang = S.lang === 'en' ? 'en' : 'ms';
+    if (screen === 'kiblat') { kbStart(); kbUpdate(); } else kbStop();
+    widgetSync();
     var l1 = document.getElementById('list');
     if (l1) {
       var key = screen + filter + S.lang;
@@ -427,7 +548,7 @@
 
   function go(s, push) {
     screen = s;
-    if (push && (s === 'tetapan' || s === 'tentang' || s === 'qiam' || s === 'kal')) history.pushState({ s: s }, '');
+    if (push && (s === 'tetapan' || s === 'tentang' || s === 'qiam' || s === 'kal' || s === 'kiblat')) history.pushState({ s: s }, '');
     render();
     if (s === 'utama') refreshData(false);
   }
@@ -550,9 +671,9 @@
     var a = el.dataset.act;
     if (a === 'zcount') {
       var zi = zCur(), zt = zTarget(zi), n1 = (Z.counts[zi.id] || 0) + 1;
-      Z.counts[zi.id] = n1; zSave(); buzz(n1 === zt ? [80, 50, 80] : 15); return zRefresh();
+      Z.counts[zi.id] = n1; zSave(); widgetSync(); buzz(n1 === zt ? [80, 50, 80] : 15); return zRefresh();
     }
-    if (a === 'zreset') { Z.counts[zCur().id] = 0; zSave(); return zRefresh(); }
+    if (a === 'zreset') { Z.counts[zCur().id] = 0; zSave(); widgetSync(); return zRefresh(); }
     if (a === 'zvib') { Z.vibrate = !Z.vibrate; zSave(); buzz(30); return render(); }
     if (a === 'ztarget') {
       var cur = zCur(), opts = [33, 99, 100], ix = opts.indexOf(zTarget(cur));
@@ -582,6 +703,7 @@
       render(); return refreshData(false);
     }
     if (a === 'saveqr') return saveQR();
+    if (a === 'kbloc') return kbLocate();
     if (a === 'mail') {
       var addr = ['fa.rawyadal', 'gmail.com'].join('@');
       location.href = 'mailto:' + addr + '?subject=' + encodeURIComponent(u('emelSubjek') + ' v' + APP_VERSION) + '&body=' + encodeURIComponent(u('emelBadan'));
@@ -602,6 +724,7 @@
   /* ---------- mula ---------- */
   loadCache();
   render();
+  pullZikir();
   refreshData(false).then(function () { reschedule(); });
 
   var lastMin = -1;
@@ -610,10 +733,10 @@
     if (m !== lastMin) { lastMin = m; if (screen === 'utama' && !firstRun) render(); }
   }, 15000);
   document.addEventListener('visibilitychange', function () {
-    if (!document.hidden) { render(); refreshData(false); reschedule(); }
+    if (!document.hidden) { wReady = !WGT; pullZikir().then(function () { render(); }); refreshData(false); reschedule(); }
   });
   if (isNative && Cap.Plugins && Cap.Plugins.App && Cap.Plugins.App.addListener) {
-    Cap.Plugins.App.addListener('resume', function () { render(); refreshData(false); reschedule(); });
+    Cap.Plugins.App.addListener('resume', function () { wReady = !WGT; pullZikir().then(function () { render(); }); refreshData(false); reschedule(); });
   }
 
   if (!isNative && 'serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {

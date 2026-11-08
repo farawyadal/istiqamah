@@ -202,7 +202,21 @@
     return !!(t && t.fajr && t.syuruk && t.dhuha && t.dhuhr && t.asr && t.maghrib && t.isha);
   }
 
+  /* ---------- Kiblat ---------- */
+  var KAABAH = { lat: 21.4225, lng: 39.8262 };
+  function qiblaBearing(lat, lng) {
+    var r = Math.PI / 180;
+    var dl = (KAABAH.lng - lng) * r;
+    var y = Math.sin(dl) * Math.cos(KAABAH.lat * r);
+    var x = Math.cos(lat * r) * Math.sin(KAABAH.lat * r) - Math.sin(lat * r) * Math.cos(KAABAH.lat * r) * Math.cos(dl);
+    return (Math.atan2(y, x) / r + 360) % 360;
+  }
+  // beza bertanda -180..180 dari a ke b
+  function angDiff(a, b) { return ((b - a + 540) % 360) - 180; }
+  function compassIndex(deg) { return Math.round((((deg % 360) + 360) % 360) / 45) % 8; }
+
   return {
+    qiblaBearing: qiblaBearing, angDiff: angDiff, compassIndex: compassIndex,
     mins: mins, hhmm: hhmm, ymd: ymd, addDays: addDays, dayIndex: dayIndex,
     umalqura: umalqura, parseJakimHijri: parseJakimHijri, hijriAdjust: hijriAdjust, hijriAt: hijriAt,
     SAMBUTAN: SAMBUTAN, sambutanOf: sambutanOf, nextSambutan: nextSambutan,
