@@ -7,7 +7,7 @@ android {
         applicationId "com.farawyadal.istiqamah"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode (System.getenv("GITHUB_RUN_NUMBER") ?: "1").toInteger()
+        versionCode Integer.parseInt(System.getenv("GITHUB_RUN_NUMBER") ?: "1")
         versionName System.getenv("APP_VER") ?: "0.0.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
