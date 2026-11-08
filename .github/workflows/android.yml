@@ -23,7 +23,16 @@ jobs:
           java-version: 21
       - run: npm ci
       - run: npm test
+      - name: Pulihkan kunci tandatangan (jika ada)
+        env:
+          KS_B64: ${{ secrets.KEYSTORE_B64 }}
+        run: |
+          if [ -n "$KS_B64" ]; then echo "$KS_B64" | base64 -d > android/app/istiqamah-debug.keystore; fi
       - run: npx cap sync android
+      - name: Versi app
+        run: |
+          V=$(node -p "require('./package.json').version")
+          echo "APP_VER=$V" >> $GITHUB_ENV
       - name: Bina APK (debug, boleh pasang terus)
         working-directory: android
         run: ./gradlew assembleDebug --no-daemon
