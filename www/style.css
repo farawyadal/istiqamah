@@ -136,3 +136,24 @@ button{font-family:inherit;cursor:pointer}
 .kbnote{margin:6px 0 0;padding:12px 14px;border-radius:16px;background:#123B63;font-size:12px;line-height:1.55;color:#B9CCE0}
 .kbbtn{display:block;margin:12px auto 0;width:100%;min-height:48px;border-radius:14px;border:1px solid var(--gold);background:transparent;color:var(--gold);font-size:14px;font-weight:700}
 #app.dark .scroll.kbm{background:var(--navy)}
+
+/* Tahajud: roda skrol */
+.wheelbox{margin-top:14px;padding:8px 0 10px;border-radius:18px;background:#EFE8D2;color:var(--navy)}
+.wl{display:flex;justify-content:center;font-size:11px;font-weight:700;letter-spacing:.06em;color:var(--muted)}.wl span{width:90px;text-align:center}.wl span:nth-child(2){width:24px}
+.wh{position:relative;display:flex;justify-content:center;align-items:center;margin-top:4px}
+.wband{position:absolute;left:36px;right:36px;top:44px;height:44px;border-radius:12px;background:var(--card);border:1px solid var(--gold)}
+.wcol{position:relative;width:90px;height:132px;overflow-y:auto;scroll-snap-type:y mandatory;scrollbar-width:none;padding:44px 0;box-sizing:border-box;overscroll-behavior:contain}
+.wcol::-webkit-scrollbar{display:none}
+.wi{height:44px;display:flex;align-items:center;justify-content:center;scroll-snap-align:center;font-size:22px;font-weight:500;color:#9AA7B5;font-variant-numeric:tabular-nums}
+.wi.on{font-size:30px;font-weight:700;color:var(--navy)}
+.wcolon{position:relative;width:24px;text-align:center;font-size:26px;font-weight:700;color:var(--navy)}
+.lim{display:flex;gap:8px;margin-top:12px}.lim>div{flex:1;padding:10px 12px;border-radius:14px;background:#EFE8D2}
+.lim b{display:block;font-size:11px;font-weight:700;letter-spacing:.04em;color:var(--muted)}.lim span{font-size:20px;font-weight:700;font-variant-numeric:tabular-nums}
+.lim.one{margin-top:16px}.lim.one>div{font-size:14px;line-height:1.55;color:#2B3E52}
+.warnbox{margin-top:8px;padding:10px 12px;border-radius:12px;background:#FBE9C8;border:1px solid var(--gold);font-size:12px;line-height:1.5;color:#6B4A00}
+.warnbox[hidden]{display:none}
+/* Kad kemas kini */
+.card.upd{background:var(--navy);color:#F4EFE0;border:1px solid var(--gold)}
+.card.upd .ut{font-size:14px;line-height:1.55;margin:6px 0 10px}.card.upd .un{font-size:12px;line-height:1.5;margin-top:8px;color:#C9D4E0}
+.btn.gold{background:var(--gold);color:var(--navy)}
+.btn:disabled{opacity:.6}

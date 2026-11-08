@@ -2,7 +2,7 @@
 (function () {
   'use strict';
   var L = window.IstiLogic, I18N = window.ISTI_I18N, ZONES = window.ISTI_ZONES;
-  var APP_VERSION = '0.3.1';
+  var APP_VERSION = '0.4.0';
   var params = new URLSearchParams(location.search);
   var Cap = window.Capacitor;
   var isNative = !!(Cap && Cap.isNativePlatform && Cap.isNativePlatform());
@@ -14,7 +14,7 @@
 
   var saved = load('isti.settings', null);
   var firstRun = !saved;
-  var S = Object.assign({ zone: 'PNG01', male: true, lang: 'ms', tar: 20, bells: {} }, saved || {});
+  var S = Object.assign({ zone: 'PNG01', male: true, lang: 'ms', tar: 20, tahMode: 'fixed', tahMin: 240, bells: {} }, saved || {});
   if (params.get('male') === '0') S.male = false;
   if (params.get('male') === '1') S.male = true;
   if (params.get('lang')) S.lang = params.get('lang');
@@ -101,7 +101,7 @@
     if (!L.validDay(t)) return null;
     var h = L.hijriAt(date, adj);
     var flags = L.dayFlags(date, h, S.male);
-    return { date: date, t: t, h: h, flags: flags, items: L.buildItems(t, flags) };
+    return { date: date, t: t, h: h, flags: flags, items: L.buildItems(t, flags, { tahMode: S.tahMode, tahMin: S.tahMin }) };
   }
   function adjustFor(date) {
     var t = cache.days[L.ymd(date)];
@@ -109,6 +109,7 @@
   }
   function itemText(k) {
     var it = T().items[k] || [k, ''];
+    if (k === 'tahajud' && S.tahMode === 'fixed') return { n: it[0], s: u('tahSubTetap') };
     return { n: it[0], s: it[1].replace('{n}', S.tar) };
   }
 
@@ -272,9 +273,101 @@
       '<div class="card"><div class="lbl">' + u('jantina') + '</div>' + seg('male', S.male ? 1 : 0, [[1, u('lelaki')], [0, u('perempuan')]]) + '<div class="note">' + u('jantinaNota') + '</div></div>' +
       '<div class="card"><div class="lbl">' + u('bahasa') + '</div>' + seg('lang', S.lang, [['ms', 'Bahasa Melayu'], ['en', 'English']]) + '</div>' +
       '<div class="card"><div class="lbl">' + u('tarawih') + '</div>' + seg('tar', S.tar, [[8, '8'], [10, '10'], [20, '20']]) + '</div>' +
+      tahCard() +
       perm +
       (firstRun ? '<button class="btn wide" data-act="done" style="margin-top:6px">' + u('selesai') + '</button>' : '<button class="btn wide ghost" data-act="refresh">' + u('kemaskini') + '</button>') +
       '</main>';
+  }
+
+  /* ---------- waktu tahajud tetap ---------- */
+  function todayT() { var t = cache.days[L.ymd(now())]; return L.validDay(t) ? t : null; }
+  function tahCard() {
+    var fixed = S.tahMode === 'fixed';
+    var t = todayT(), tmax = L.tahajudMax(t), tmin = L.TAH_MIN;
+    var seg = '<div class="seg" role="group">' + [['fixed', u('tahTetap')], ['third', u('tahSepertiga')]].map(function (i) {
+      return '<button class="' + (S.tahMode === i[0] || (i[0] === 'fixed' && !S.tahMode) ? 'on' : '') + '" data-set="tahMode" data-val="' + i[0] + '" aria-pressed="' + (S.tahMode === i[0]) + '">' + i[1] + '</button>';
+    }).join('') + '</div>';
+    var body;
+    if (fixed) {
+      var hrs = '', mi = '', h, m;
+      for (h = 2; h <= Math.max(2, Math.floor(tmax / 60)); h++) hrs += '<div class="wi">' + ('0' + h).slice(-2) + '</div>';
+      for (m = 0; m < 60; m += 5) mi += '<div class="wi">' + ('0' + m).slice(-2) + '</div>';
+      body = '<div class="wheelbox"><div class="wl"><span>' + u('jam') + '</span><span></span><span>' + u('minit') + '</span></div>' +
+        '<div class="wh"><div class="wband"></div><div class="wcol" id="whH" aria-label="' + u('jam') + '">' + hrs + '</div><div class="wcolon">:</div><div class="wcol" id="whM" aria-label="' + u('minit') + '">' + mi + '</div></div>' +
+        '<div class="note" style="text-align:center">' + u('tahSkrol') + '</div></div>' +
+        '<div class="lim"><div><b>' + u('tahAwal') + '</b><span>' + L.hhmm(tmin) + '</span></div><div><b>' + u('tahLewat') + '</b><span>' + L.hhmm(tmax) + '</span></div></div>' +
+        '<div class="note">' + u('tahHadNota').replace('{s}', t ? t.fajr.slice(0, 5) : '--:--') + '</div>' +
+        '<div class="warnbox" id="whWarn" hidden>' + u('tahDihad').replace('{a}', L.hhmm(tmin)).replace('{b}', L.hhmm(tmax)) + '</div>';
+    } else {
+      body = '<div class="lim one"><div>' + u('tahSepertigaNota') + '</div></div>';
+    }
+    return '<div class="card"><div class="lbl">' + u('tahTitle') + '</div><div class="note" style="margin:0 0 10px">' + u('tahNota') + '</div>' + seg + body + '</div>';
+  }
+  function setupWheel() {
+    var H = document.getElementById('whH'), M = document.getElementById('whM');
+    if (!H || !M) return;
+    var ROW = 44, warn = document.getElementById('whWarn'), tm = null, wt = null;
+    var v0 = L.tahajudClamp(S.tahMin == null ? 240 : S.tahMin, todayT());
+    var ph = Math.floor(v0 / 60), pm = v0 % 60;
+    function paint() {
+      [].forEach.call(H.children, function (c, i) { c.classList.toggle('on', i + 2 === ph); });
+      [].forEach.call(M.children, function (c, i) { c.classList.toggle('on', i * 5 === pm); });
+    }
+    function place(v, smooth) {
+      var o = smooth ? { behavior: 'smooth' } : null;
+      var top1 = (Math.floor(v / 60) - 2) * ROW, top2 = Math.round((v % 60) / 5) * ROW;
+      if (o) { H.scrollTo({ top: top1, behavior: 'smooth' }); M.scrollTo({ top: top2, behavior: 'smooth' }); }
+      else { H.scrollTop = top1; M.scrollTop = top2; }
+    }
+    function settle() {
+      var raw = ph * 60 + pm, v = L.tahajudClamp(raw, todayT());
+      if (v !== raw) {
+        ph = Math.floor(v / 60); pm = v % 60; place(v, true); paint();
+        if (warn) { warn.hidden = false; clearTimeout(wt); wt = setTimeout(function () { warn.hidden = true; }, 3500); }
+      }
+      if (S.tahMin !== v) { S.tahMin = v; persist(); reschedule(); }
+    }
+    function onScroll(col, isH) {
+      col.addEventListener('scroll', function () {
+        var idx = Math.round(col.scrollTop / ROW);
+        if (isH) ph = Math.max(2, Math.min(2 + H.children.length - 1, 2 + idx));
+        else pm = Math.max(0, Math.min(11, idx)) * 5;
+        paint();
+        clearTimeout(tm); tm = setTimeout(settle, 160);
+      }, { passive: true });
+    }
+    place(v0, false); paint();
+    onScroll(H, true); onScroll(M, false);
+  }
+
+  /* ---------- semakan versi baharu ---------- */
+  var REL_API = 'https://api.github.com/repos/farawyadal/istiqamah/releases/latest';
+  var U = { state: '', newer: null, toasted: false };
+  function checkUpdate(force) {
+    if (!isNative) return Promise.resolve();
+    if (!force && Date.now() - load('isti.updchk', 0) < 6 * 3600 * 1000) return Promise.resolve();
+    U.state = 'busy'; if (screen === 'tentang') render();
+    return fetch(REL_API, { headers: { Accept: 'application/vnd.github+json' } })
+      .then(function (r) { if (!r.ok) throw new Error('http'); return r.json(); })
+      .then(function (j) {
+        save('isti.updchk', Date.now());
+        var apk = (j.assets || []).filter(function (a) { return /\.apk$/i.test(a.name); })[0];
+        U.state = 'ok';
+        U.newer = apk && L.newerVer(j.tag_name, APP_VERSION) ? { v: L.parseVer(j.tag_name).join('.'), url: apk.browser_download_url } : null;
+        if (U.newer && !U.toasted) { U.toasted = true; toast(u('updToast')); }
+        if (screen === 'tentang') render();
+      })
+      .catch(function () { U.state = 'err'; if (force) toast(u('updGagal')); if (screen === 'tentang') render(); });
+  }
+  function updCard() {
+    if (!isNative) return '';
+    if (U.newer) {
+      return '<div class="card upd"><div class="lbl gold" style="color:var(--gold)">' + u('updTitle') + '</div>' +
+        '<div class="ut">' + u('updBody').replace('{n}', U.newer.v).replace('{o}', APP_VERSION) + '</div>' +
+        '<button class="btn wide gold" data-act="upd">' + u('updBtn') + '</button><div class="un">' + u('updNota') + '</div></div>';
+    }
+    return '<div class="card"><div class="lbl gold">' + u('updTerkini') + '</div>' +
+      '<button class="btn wide ghost" data-act="updcheck" style="margin-top:8px"' + (U.state === 'busy' ? ' disabled' : '') + '>' + (U.state === 'busy' ? u('updMenyemak') : u('updSemak')) + '</button></div>';
   }
 
   function viewTentang() {
@@ -283,6 +376,7 @@
       '<main class="scroll">' +
       '<div class="card about"><div class="logo">' + ICON.logo + '</div><div style="flex:1"><div class="an">Istiqamah</div><div class="av">' + u('versi') + ' ' + APP_VERSION + '</div>' +
       (showInstall ? '<button class="btn sm" data-act="install">' + u('pasang') + '</button>' : '') + '</div></div>' +
+      updCard() +
       '<div class="card"><div class="lbl gold">' + u('baharuTitle') + ' · v' + APP_VERSION + '</div><div class="bul">' + u('baharu').map(function (x) { return '<div>• ' + x + '</div>'; }).join('') + '</div></div>' +
       '<div class="card qr"><div class="lbl gold" style="text-align:left">' + u('sokongTitle') + '</div><div class="bul" style="text-align:left">' + u('sokongIntro') + '</div>' +
       '<div class="qrbox"><img src="img/duitnow-qr.jpg" alt="DuitNow QR Istiqamah, Bank Islam"></div>' +
@@ -534,6 +628,7 @@
     root.innerHTML = '<div class="screen">' + html + '</div>' + (withNav ? nav() : '');
     document.documentElement.lang = S.lang === 'en' ? 'en' : 'ms';
     if (screen === 'kiblat') { kbStart(); kbUpdate(); } else kbStop();
+    if (screen === 'tetapan' && S.tahMode === 'fixed') setupWheel();
     widgetSync();
     var l1 = document.getElementById('list');
     if (l1) {
@@ -651,6 +746,7 @@
       if (n === 'male') S.male = v === '1';
       else if (n === 'lang') S.lang = v;
       else if (n === 'tar') S.tar = +v;
+      else if (n === 'tahMode') S.tahMode = v;
       persist(); reschedule(); return render();
     }
     if (el.dataset.zsel) { Z.sel = el.dataset.zsel; zSave(); return render(); }
@@ -703,6 +799,8 @@
       render(); return refreshData(false);
     }
     if (a === 'saveqr') return saveQR();
+    if (a === 'upd') { if (U.newer) location.href = U.newer.url; return; }
+    if (a === 'updcheck') return checkUpdate(true);
     if (a === 'kbloc') return kbLocate();
     if (a === 'mail') {
       var addr = ['fa.rawyadal', 'gmail.com'].join('@');
@@ -726,6 +824,7 @@
   render();
   pullZikir();
   refreshData(false).then(function () { reschedule(); });
+  checkUpdate(false);
 
   var lastMin = -1;
   setInterval(function () {
@@ -736,7 +835,7 @@
     if (!document.hidden) { wReady = !WGT; pullZikir().then(function () { render(); }); refreshData(false); reschedule(); }
   });
   if (isNative && Cap.Plugins && Cap.Plugins.App && Cap.Plugins.App.addListener) {
-    Cap.Plugins.App.addListener('resume', function () { wReady = !WGT; pullZikir().then(function () { render(); }); refreshData(false); reschedule(); });
+    Cap.Plugins.App.addListener('resume', function () { wReady = !WGT; pullZikir().then(function () { render(); }); refreshData(false); reschedule(); checkUpdate(false); });
   }
 
   if (!isNative && 'serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {

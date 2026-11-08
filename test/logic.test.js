@@ -89,4 +89,23 @@ ok('kiblat', () => {
   assert.strictEqual(L.angDiff(10, 350), -20);
 });
 
+ok('tahajud tetap + had', () => {
+  const f = { jumaat: false, raya: false, ramadan: false };
+  const get = (o) => L.buildItems(t, f, o).find(x => x.k === 'tahajud').t;
+  assert.strictEqual(get({ tahMode: 'fixed', tahMin: 240 }), '04:00');
+  assert.strictEqual(get({ tahMode: 'fixed', tahMin: 60 }), '02:00');     // terlalu awal
+  assert.strictEqual(L.tahajudMax(t), 325);                                // 05:55 - 30 = 05:25
+  assert.strictEqual(get({ tahMode: 'fixed', tahMin: 400 }), '05:25');    // terlalu lewat
+  assert.strictEqual(get({ tahMode: 'third' }), '02:17');                 // cara lama
+  assert.strictEqual(get(), '02:17');
+  assert.strictEqual(L.tahajudClamp(243, t), 245);
+});
+
+ok('banding versi', () => {
+  assert.ok(L.newerVer('v0.4.0-12', '0.3.1'));
+  assert.ok(!L.newerVer('v0.3.1-9', '0.3.1'));
+  assert.ok(L.newerVer('v0.10.0-1', '0.9.9'));
+  assert.ok(!L.newerVer('rubbish', '0.3.1'));
+});
+
 console.log(n + ' ujian lulus');

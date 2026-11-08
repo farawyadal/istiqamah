@@ -95,7 +95,18 @@
   /* ---------- Senarai solat satu hari ----------
      t = {fajr, syuruk, dhuha, dhuhr, asr, maghrib, isha} (HH:MM[:SS])
      Pulangkan [{k, m, fardu}] diisih ikut masa (qabliyah sebelum fardu). */
-  function buildItems(t, flags) {
+  // Had waktu tahajud tetap: paling awal 02:00, paling lewat 30 minit sebelum Subuh (bulat ke 5 minit).
+  var TAH_MIN = 120, TAH_STEP = 5, TAH_BEFORE_SUBUH = 30;
+  function tahajudMax(t) {
+    var f = t && t.fajr ? mins(t.fajr) : 348;
+    return Math.max(TAH_MIN, Math.floor((f - TAH_BEFORE_SUBUH) / TAH_STEP) * TAH_STEP);
+  }
+  function tahajudClamp(v, t) {
+    v = Math.round(v / TAH_STEP) * TAH_STEP;
+    return Math.min(tahajudMax(t), Math.max(TAH_MIN, v));
+  }
+
+  function buildItems(t, flags, opts) {
     var fajr = mins(t.fajr), syuruk = mins(t.syuruk), dhuha = mins(t.dhuha),
       dhuhr = mins(t.dhuhr), asr = mins(t.asr), maghrib = mins(t.maghrib), isha = mins(t.isha);
     var nightLen = (fajr + DAY) - maghrib;
@@ -103,6 +114,7 @@
     var L = [];
     function add(k, m, fardu) { L.push({ k: k, m: m, fardu: !!fardu }); }
 
+    if (opts && opts.tahMode === 'fixed') tahajud = tahajudClamp(opts.tahMin == null ? 240 : opts.tahMin, t);
     add('tahajud', tahajud % DAY, 0);
     add('qsubuh', fajr, 0);
     add('subuh', fajr, 1);
@@ -215,7 +227,21 @@
   function angDiff(a, b) { return ((b - a + 540) % 360) - 180; }
   function compassIndex(deg) { return Math.round((((deg % 360) + 360) % 360) / 45) % 8; }
 
+  // 'v0.4.0-12' atau '0.4.0' -> [0,4,0]
+  function parseVer(s) {
+    var m = /(\d+)\.(\d+)\.(\d+)/.exec(s || '');
+    return m ? [+m[1], +m[2], +m[3]] : null;
+  }
+  function newerVer(a, b) { // a lebih baharu daripada b?
+    var x = parseVer(a), y = parseVer(b);
+    if (!x || !y) return false;
+    for (var i = 0; i < 3; i++) { if (x[i] !== y[i]) return x[i] > y[i]; }
+    return false;
+  }
+
   return {
+    parseVer: parseVer, newerVer: newerVer,
+    TAH_MIN: TAH_MIN, tahajudMax: tahajudMax, tahajudClamp: tahajudClamp,
     qiblaBearing: qiblaBearing, angDiff: angDiff, compassIndex: compassIndex,
     mins: mins, hhmm: hhmm, ymd: ymd, addDays: addDays, dayIndex: dayIndex,
     umalqura: umalqura, parseJakimHijri: parseJakimHijri, hijriAdjust: hijriAdjust, hijriAt: hijriAt,
