@@ -1,6 +1,6 @@
 {
   "name": "istiqamah",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "Istiqamah: waktu solat fardu dan sunat dalam satu tempat",
   "scripts": {
@@ -8,6 +8,7 @@
     "sync": "cap sync android"
   },
   "dependencies": {
+    "@capacitor-community/media": "^8.0.1",
     "@capacitor/android": "^7.0.0",
     "@capacitor/core": "^7.0.0",
     "@capacitor/local-notifications": "^7.0.0"

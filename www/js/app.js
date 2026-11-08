@@ -2,7 +2,7 @@
 (function () {
   'use strict';
   var L = window.IstiLogic, I18N = window.ISTI_I18N, ZONES = window.ISTI_ZONES;
-  var APP_VERSION = '0.1.0';
+  var APP_VERSION = '0.1.1';
   var params = new URLSearchParams(location.search);
   var Cap = window.Capacitor;
   var isNative = !!(Cap && Cap.isNativePlatform && Cap.isNativePlatform());
@@ -264,9 +264,13 @@
       '<div class="card about"><div class="logo">' + ICON.logo + '</div><div style="flex:1"><div class="an">Istiqamah</div><div class="av">' + u('versi') + ' ' + APP_VERSION + '</div>' +
       (showInstall ? '<button class="btn sm" data-act="install">' + u('pasang') + '</button>' : '') + '</div></div>' +
       '<div class="card"><div class="lbl gold">' + u('baharuTitle') + ' · v' + APP_VERSION + '</div><div class="bul">' + u('baharu').map(function (x) { return '<div>• ' + x + '</div>'; }).join('') + '</div></div>' +
+      '<div class="card qr"><div class="lbl gold" style="text-align:left">' + u('sokongTitle') + '</div><div class="bul" style="text-align:left">' + u('sokongIntro') + '</div>' +
+      '<div class="qrbox"><img src="img/duitnow-qr.jpg" alt="DuitNow QR Istiqamah, Bank Islam"></div>' +
+      '<div class="note">' + u('imbas') + '</div><div class="note"><b>' + u('telefonSama') + '</b>' + u('telefonSamaRest') + '</div>' +
+      '<button class="btn wide" data-act="saveqr" style="margin-top:14px">' + u('simpanQR') + '</button></div>' +
       '<div class="card"><div class="lbl gold">' + u('maklumBalas') + '</div><button class="btn wide ghost" data-act="mail" style="margin-top:8px">' + u('hantar') + '</button><div class="note">' + u('hantarNota') + '</div></div>' +
       '<div class="card dis"><div class="lbl">' + u('penafianTitle') + '</div><div class="dt">' + u('penafian') + '</div></div>' +
-      '<div class="foot"><b>Istiqamah</b> | Developed by FaridAssamani | 2026</div></main>';
+      '<div class="foot"><b>Istiqamah</b> • Developed by FaridAssamani • ©2026 • v' + APP_VERSION + '</div></main>';
   }
 
   var toastTimer = null;
@@ -357,6 +361,26 @@
     }).catch(function () {});
   }
 
+  /* ---------- simpan QR ---------- */
+  function saveQR() {
+    var url = 'img/duitnow-qr.jpg';
+    var Media = isNative && Cap.Plugins ? Cap.Plugins.Media : null;
+    if (Media) {
+      fetch(url).then(function (r) { return r.blob(); }).then(function (b) {
+        return new Promise(function (res, rej) {
+          var fr = new FileReader(); fr.onload = function () { res(fr.result); }; fr.onerror = rej; fr.readAsDataURL(b);
+        });
+      }).then(function (data) { return Media.savePhoto({ path: data, fileName: 'Istiqamah-DuitNow-QR' }); })
+        .then(function () { toast(u('qrDisimpan')); })
+        .catch(function () { toast(u('qrGagal')); });
+      return;
+    }
+    var a = document.createElement('a');
+    a.href = url; a.download = 'Istiqamah-DuitNow-QR.jpg';
+    document.body.appendChild(a); a.click(); a.remove();
+    toast(u('qrDisimpan'));
+  }
+
   /* ---------- acara ---------- */
   root.addEventListener('click', function (e) {
     var el = e.target.closest('[data-go],[data-filter],[data-bell],[data-tar],[data-set],[data-act]');
@@ -384,6 +408,7 @@
       askPermission().then(askExact);
       render(); return refreshData(false);
     }
+    if (a === 'saveqr') return saveQR();
     if (a === 'mail') {
       var addr = ['fa.rawyadal', 'gmail.com'].join('@');
       location.href = 'mailto:' + addr + '?subject=' + encodeURIComponent(u('emelSubjek') + ' v' + APP_VERSION) + '&body=' + encodeURIComponent(u('emelBadan'));

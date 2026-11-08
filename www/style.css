@@ -77,9 +77,11 @@ button{font-family:inherit;cursor:pointer}
 .an{font-size:19px;font-weight:700}.av{font-size:13px;color:var(--muted);margin-top:2px}
 .bul{font-size:14px;line-height:1.55;margin-top:6px;color:#2B3E52}
 .card.dis{background:#EFE8D2;border:0}.dt{font-size:12px;line-height:1.55;color:#2B3E52}
-.foot{margin-top:16px;text-align:center;font-size:12px;color:var(--muted)}.foot b{color:var(--navy)}
+.foot{margin-top:16px;padding-bottom:8px;text-align:center;font-size:11px;white-space:nowrap;color:var(--muted)}.foot b{color:var(--navy)}
 
 #toast{position:fixed;left:16px;right:16px;bottom:calc(84px + env(safe-area-inset-bottom,0px));padding:12px 16px;border-radius:14px;background:var(--navy);color:#F4EFE0;font-size:13px;line-height:1.4;opacity:0;pointer-events:none;transition:opacity .2s;text-align:center}
 #toast.show{opacity:1}
 :focus-visible{outline:3px solid var(--gold2);outline-offset:2px}
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
+
+.card.qr{text-align:center}.qrbox{margin:14px auto 0;width:300px;max-width:100%;border-radius:20px;background:#fff;border:1px solid var(--line);overflow:hidden}.qrbox img{display:block;width:100%;height:auto}
