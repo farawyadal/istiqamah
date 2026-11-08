@@ -1,0 +1,19 @@
+{
+  "appId": "com.farawyadal.istiqamah",
+  "appName": "Istiqamah",
+  "webDir": "www",
+  "android": {
+    "allowMixedContent": false,
+    "adjustMarginsForEdgeToEdge": "auto"
+  },
+  "plugins": {
+    "CapacitorHttp": {
+      "enabled": true
+    },
+    "LocalNotifications": {
+      "smallIcon": "ic_stat_istiqamah",
+      "iconColor": "#0E7C66"
+    }
+  },
+  "backgroundColor": "#F6F1E4"
+}
