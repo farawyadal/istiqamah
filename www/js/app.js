@@ -2,7 +2,7 @@
 (function () {
   'use strict';
   var L = window.IstiLogic, I18N = window.ISTI_I18N, ZONES = window.ISTI_ZONES, ZPTS = window.ISTI_ZONEPTS || [];
-  var APP_VERSION = '0.7.1';
+  var APP_VERSION = '0.8.0';
   var params = new URLSearchParams(location.search);
   var Cap = window.Capacitor;
   var isNative = !!(Cap && Cap.isNativePlatform && Cap.isNativePlatform());
@@ -204,7 +204,7 @@
 
   function header(zoneText, line2, line3) {
     return '<header class="banner">' + ICON.star +
-      '<div class="b1"><div class="bt">Istiqamah</div><div class="bz">' + zoneText + '</div></div>' +
+      '<div class="b1"><div class="bt">Istiqamah</div><div class="bzw"><div class="bz">' + zoneText + '</div>' + (screen === 'utama' ? '<button class="bk" data-go="kiblat" aria-label="' + u('kiblat') + '"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></svg></button>' : '') + '</div></div>' +
       '<div class="b2">' + line2 + '</div><div class="b3"' + (line3 ? '' : ' hidden') + '>' + line3 + '</div></header>';
   }
 
@@ -274,7 +274,10 @@
         rows += '<div class="row later free"><div class="rt sm">' + u('bila') + '</div><div><div class="rn">' + tx.n + '</div><div class="rs">' + tx.s + '</div></div><span></span></div>';
       });
     }
-    return hdr + hero + '<div class="chips" role="group" aria-label="Tapis">' + chips + '</div><div class="list" id="list">' + tar + rows + '</div>';
+    var tz = zToday(), hi = dayIndex(today) % F.hadis.length, hd = F.hadis[hi], hk = S.lang === 'en' ? 1 : 0;
+    var cards = '<div class="tcards"><button class="tc tz" data-act="tozikir"><span class="tcl">' + tt('ZIKIR HARI INI', 'DHIKR OF THE DAY') + '</span><span class="tca" lang="ar" dir="rtl">' + esc(tz.ar) + '</span><span class="tcs">' + esc(tz.n) + '</span></button>' +
+      '<button class="tc th" data-go="hadis"><span class="tcl">' + tt('HADIS HARI INI', 'HADITH OF THE DAY') + ' · ' + (hi + 1) + '</span><span class="tct">' + esc(hd[hk]) + '</span><span class="tcs">' + esc(hd[2 + hk]) + '</span></button></div>';
+    return hdr + hero + cards + '<div class="chips" role="group" aria-label="Tapis">' + chips + '</div><div class="list" id="list">' + tar + rows + '</div>';
   }
 
   function viewLagi() {
@@ -359,6 +362,7 @@
       '<div class="card"><div class="lbl">' + u('jantina') + '</div>' + seg('male', S.male ? 1 : 0, [[1, u('lelaki')], [0, u('perempuan')]]) + '<div class="note">' + u('jantinaNota') + '</div></div>' +
       '<div class="card"><div class="lbl">' + u('tarawih') + '</div>' + seg('tar', S.tar, [[8, '8'], [10, '10'], [20, '20']]) + '</div>' +
       tahCard() +
+      (WGT ? '<div class="card"><div class="lbl">' + tt('KELEGAPAN WIDGET', 'WIDGET OPACITY') + '</div>' + seg('wopa', S.wopa || 'mid', [['solid', tt('Pekat', 'Solid')], ['mid', tt('Sederhana', 'Medium')], ['glass', tt('Lutsinar', 'Clear')]]) + '<div class="note">' + tt('Latar widget waktu solat. Android tak membenarkan kesan kabur sebenar, jadi ia separa lutsinar.', 'Prayer-times widget background. Android cannot blur widgets, so this is semi-transparent.') + '</div></div>' : '') +
       sech(u('secBahasa')) +
       '<div class="card"><div class="lbl">' + u('bahasa') + '</div>' + seg('lang', S.lang, [['ms', 'Bahasa Melayu'], ['en', 'English']]) + '</div>' +
       (isNative ? sech(u('secNotif')) + perm : '') +
@@ -723,6 +727,18 @@
     clearTimeout(wTimer);
     wTimer = setTimeout(doWidgetSync, 600);
   }
+  var WGRP = { subuh: ['qsubuh', 'isyraq'], syuruk: ['isyraq', 'dhuha'], zohor: ['qzohor', 'qjumaat', 'bzohor', 'bjumaat'], asar: ['qasar'], maghrib: ['bmaghrib', 'awwabin'], isyak: ['bisyak', 'tarawih', 'witir'] };
+  function wGroups(items) {
+    var out = {};
+    Object.keys(WGRP).forEach(function (g) {
+      var a = [];
+      WGRP[g].forEach(function (k) {
+        items.forEach(function (it) { if (it.k === k && a.length < 2) a.push([itemText(k).n, it.t]); });
+      });
+      out[g] = a;
+    });
+    return out;
+  }
   function doWidgetSync() {
     var today = now(), adj = adjustFor(today), days = [], t = T();
     for (var i = 0; i < 4; i++) {
@@ -735,17 +751,30 @@
         p: { subuh: tt.fajr.slice(0, 5), syuruk: tt.syuruk.slice(0, 5), zohor: tt.dhuhr.slice(0, 5), asar: tt.asr.slice(0, 5), maghrib: tt.maghrib.slice(0, 5), isyak: tt.isha.slice(0, 5) },
         items: dm.items.map(function (it) {
           var tx = itemText(it.k);
-          return { n: tx.n, s: tx.s.split(' · ').slice(1).join(' · '), t: it.t, f: it.fardu ? 1 : 0 };
-        })
+          return { n: tx.n, s: tx.s.split(' · ').slice(1).join(' · '), t: it.t, f: it.fardu ? 1 : 0, b: L.bellOn(S.bells, it.k) ? 1 : 0 };
+        }),
+        g: wGroups(dm.items)
       });
     }
     var labels = {
       seterusnya: t.ui.wSeterusnya, sunatNext: t.ui.wSunat, tinggal: t.ui.wTinggal, zikirTap: t.ui.wZikir,
       am: t.ui.pagi, pm: t.ui.petang, dow: t.ui.hari, mon: t.ui.bulanM,
+      masuk: tt('MASUK WAKTU', 'PRAYER TIME'), waktu: tt('WAKTU', 'TIME'), zikirHari: tt('ZIKIR HARI INI', 'DHIKR OF THE DAY'), hadisHari: tt('HADIS HARI INI', 'HADITH OF THE DAY'),
       subuh: t.items.subuh[0], syuruk: t.ui.syuruk, zohor: t.items.zohor[0], asar: t.items.asar[0], maghrib: t.items.maghrib[0], isyak: t.items.isyak[0]
     };
-    var zc = zCur();
-    WGT.sync({ data: JSON.stringify({ zone: zoneShort(S.zone), days: days, labels: labels }), zid: zc.id, zn: zc.n, zt: zTarget(zc), zc: Z.counts[zc.id] || 0 }).catch(function () { /* abaikan */ });
+    var zc = zCur(), tz = zToday(), hi = dayIndex(today) % F.hadis.length, hd = F.hadis[hi], hk = S.lang === 'en' ? 1 : 0;
+    WGT.sync({ data: JSON.stringify({ zone: zoneShort(S.zone), days: days, labels: labels, opa: S.wopa || 'mid', zk: { ar: tz.ar, n: tz.n }, hd: { i: hi + 1, t: hd[hk], s: hd[2 + hk] } }), zid: zc.id, zn: zc.n, zt: zTarget(zc), zc: Z.counts[zc.id] || 0 }).catch(function () { /* abaikan */ });
+  }
+  function pullOpen() {
+    if (!WGT || !WGT.getOpen) return Promise.resolve();
+    return WGT.getOpen().then(function (r) {
+      var o = r && r.o;
+      if (!o) return;
+      if (o === 'zone') { if (screen !== 'utama') go('utama', false); return autoZone(true); }
+      if (o === 'kiblat') return go('kiblat', true);
+      if (o === 'zikir') { Z.sel = zToday().id; zSave(); return go('zikir', false); }
+      if (o === 'hadis') return go('hadis', true);
+    }).catch(function () { /* abaikan */ });
   }
   function pullZikir() {
     if (!WGT) return Promise.resolve();
@@ -791,7 +820,7 @@
     root.className = screen === 'zikir' || screen === 'zkat' || screen === 'kiblat' || screen === 'khatam' ? 'dark' : '';
     root.innerHTML = '<div class="screen">' + html + '</div>' + (withNav ? nav() : '');
     var m1 = root.querySelector('main.scroll') || root.querySelector('.zscroll');
-    if (m1 && mScreen === screen && mTop) m1.scrollTop = mTop; // kekal di tempat yang sama selepas ketik
+    if (m1 && mScreen === screen && mTop) m1.scrollTop = mTop; // kekal di tempat yang sama selepas klik
     renderedScreen = screen;
     document.documentElement.lang = S.lang === 'en' ? 'en' : 'ms';
     if (screen === 'kiblat') { kbStart(); kbUpdate(); } else kbStop();
@@ -874,7 +903,7 @@
       '<div class="kstats"><div><span>' + tt('Hari', 'Day') + '</span><b>' + tt('Ke-', '') + days + '</b></div><div><span>' + tt('Purata', 'Average') + '</span><b>' + avg.toFixed(1) + ' ' + tt('juzuk/hari', 'juz/day') + '</b></div><div><span>' + tt('Anggaran khatam', 'Est. finish') + '</span><b>' + eta + '</b></div></div>' +
       '<div class="krow2"><label class="kdate">' + tt('Tarikh mula', 'Start date') + '<input id="kstart" type="date" value="' + K.start + '" max="' + today + '"></label>' +
       '<button class="kbtn" data-act="kshare">' + tt('Kongsi', 'Share') + '</button></div>' +
-      '<div class="klbl">' + tt('Ketik juzuk terakhir yang sudah dibaca', 'Tap the last juz you have read') + '</div><div class="kgrid">' + grid + '</div>' +
+      '<div class="klbl">' + tt('Klik juzuk terakhir yang sudah dibaca', 'Tap the last juz you have read') + '</div><div class="kgrid">' + grid + '</div>' +
       (up >= 30 ? '<button class="kbtn gold" data-act="knext" style="margin:14px 20px 0;width:calc(100% - 40px)">' + tt('Mulakan khatam seterusnya', 'Start the next completion') + '</button>' : '') +
       '<button class="kbtn" data-act="kquran" style="margin:14px 20px 24px;width:calc(100% - 40px)">' + tt('Baca di Quran.com', 'Read on Quran.com') + ' ›</button></div>';
   }
@@ -893,7 +922,7 @@
       return '<div class="card cabc"><div class="cabh"><div><div class="cabn">' + esc(cabName(c)) + '</div><div class="cabs">' + sub + '</div></div><button class="cabx" data-act="cabdel" data-id="' + c.id + '" aria-label="' + u('buang') + '">✕</button></div>' +
         '<div class="cabp"><b>' + prog + '</b>' + (fin ? '<span class="cabok">' + tt('Selesai ✓', 'Done ✓') + '</span>' : '') + '</div>' +
         (tg > 0 ? '<div class="bar"><div style="width:' + Math.min(100, n / tg * 100) + '%"></div></div>' : '') +
-        '<button class="btn wide' + (ticked ? ' ghost' : '') + '" data-act="cabtick" data-id="' + c.id + '" style="margin-top:10px">' + (ticked ? tt('✓ Hari ini sudah ditanda (ketik untuk batal)', '✓ Done today (tap to undo)') : tt('Tanda siap hari ini', 'Mark today done')) + '</button>' +
+        '<button class="btn wide' + (ticked ? ' ghost' : '') + '" data-act="cabtick" data-id="' + c.id + '" style="margin-top:10px">' + (ticked ? tt('✓ Hari ini sudah ditanda (klik untuk batal)', '✓ Done today (tap to undo)') : tt('Tanda siap hari ini', 'Mark today done')) + '</button>' +
         '<button class="cabshare" data-act="cabshare" data-id="' + c.id + '">' + tt('Kongsi', 'Share') + '</button></div>';
     }).join('') || '<div class="note" style="margin:0 4px 6px">' + tt('Belum ada cabaran. Pilih satu di bawah atau cipta sendiri.', 'No challenges yet. Pick one below or create your own.') + '</div>';
     var avail = F.cab.filter(function (t) { return !C.list.some(function (c) { return c.k === t[0]; }); }).map(function (t) {
@@ -1117,6 +1146,7 @@
       else if (n === 'lang') S.lang = v;
       else if (n === 'tar') S.tar = +v;
       else if (n === 'tahMode') S.tahMode = v;
+      else if (n === 'wopa') { S.wopa = v; persist(); widgetSync(); return render(); }
       else if (n === 'zoneAuto') {
         S.zoneAuto = v === '1'; persist();
         if (S.zoneAuto && !firstRun) { render(); return autoZone(true); }
@@ -1147,6 +1177,7 @@
       var sk = el.dataset.sbell; S.sbells = S.sbells || {}; S.sbells[sk] = sbellOn(sk) ? 0 : 1; persist(); reschedule(); return render();
     }
     var a = el.dataset.act;
+    if (a === 'tozikir') { Z.sel = zToday().id; zSave(); return go('zikir', false); }
     if (a === 'hdopen') { var hi = +el.dataset.n; hdOpen = hdOpen === hi ? -1 : hi; return render(); }
     if (a === 'hdshare') { var hh = F.hadis[+el.dataset.n], k2 = S.lang === 'en' ? 1 : 0; return shareText(hh[k2] + '\n' + hh[2 + k2] + '\n(' + hh[4] + ')\n— Istiqamah'); }
     if (a === 'hdpdf') { location.href = F.pdf; return; }
@@ -1262,7 +1293,7 @@
   /* ---------- mula ---------- */
   loadCache();
   render();
-  pullZikir();
+  pullZikir().then(pullOpen);
   refreshData(false).then(function () { reschedule(); return autoZone(false); });
   checkUpdate(false);
 
@@ -1272,7 +1303,7 @@
     if (m !== lastMin) { lastMin = m; if (screen === 'utama' && !firstRun) render(); }
   }, 15000);
   function wake() {
-    wReady = !WGT; pullZikir().then(function () { render(); }); refreshData(false); reschedule(); checkUpdate(false); autoZone(false);
+    wReady = !WGT; pullZikir().then(function () { render(); return pullOpen(); }); refreshData(false); reschedule(); checkUpdate(false); autoZone(false);
   }
   document.addEventListener('visibilitychange', function () { if (!document.hidden) wake(); });
   if (isNative && Cap.Plugins && Cap.Plugins.App && Cap.Plugins.App.addListener) {

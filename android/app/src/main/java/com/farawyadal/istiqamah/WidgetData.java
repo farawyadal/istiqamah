@@ -22,6 +22,7 @@ final class WidgetData {
         String time; // HH:MM
         long at;
         boolean fardu;
+        boolean bell = true;
     }
 
     private WidgetData() {}
@@ -87,6 +88,7 @@ final class WidgetData {
                 it.sub = o.optString("s");
                 it.time = o.optString("t");
                 it.fardu = o.optInt("f") == 1;
+                it.bell = o.optInt("b", 1) == 1;
                 it.at = epoch(ymd, it.time);
                 out.add(it);
             }

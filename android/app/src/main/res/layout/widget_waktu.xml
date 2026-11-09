@@ -7,11 +7,16 @@
     android:gravity="center_vertical"
     android:paddingStart="8dp" android:paddingEnd="8dp" android:paddingTop="6dp" android:paddingBottom="6dp"
     android:background="@drawable/widget_bg_navy">
-    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:paddingStart="6dp" android:paddingEnd="6dp">
-        <TextView android:id="@+id/zone" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:textSize="9sp" android:textColor="#B9CCE0" android:maxLines="1"/>
-        <TextView android:id="@+id/dline" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textSize="9sp" android:textColor="#B9CCE0" android:maxLines="1"/>
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:paddingStart="4dp" android:paddingEnd="6dp">
+        <LinearLayout android:id="@+id/loc" android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:paddingTop="2dp" android:paddingBottom="2dp" android:paddingEnd="4dp">
+            <ImageView android:layout_width="12dp" android:layout_height="12dp" android:src="@drawable/ic_pin"/>
+            <TextView android:id="@+id/zone" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="3dp" android:textSize="10sp" android:textColor="#E8EEF5" android:maxLines="1"/>
+        </LinearLayout>
+        <ImageView android:id="@+id/kib" android:layout_width="20dp" android:layout_height="20dp" android:padding="3dp" android:src="@drawable/ic_compass"/>
+        <View android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1"/>
+        <TextView android:id="@+id/dline" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textSize="10sp" android:textColor="#E8EEF5" android:maxLines="1"/>
     </LinearLayout>
-    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="3dp">
+    <LinearLayout android:id="@+id/list" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="3dp">
         <LinearLayout android:id="@+id/cell1" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
             android:orientation="vertical" android:gravity="center_horizontal" android:paddingTop="3dp" android:paddingBottom="3dp" android:layout_marginStart="1dp" android:layout_marginEnd="1dp"
             android:background="@drawable/widget_cell_none">
@@ -49,8 +54,18 @@
             <TextView android:id="@+id/tm6" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="1dp" android:textSize="12sp" android:textStyle="bold" android:textColor="#8FA9C4" android:maxLines="1"/>
         </LinearLayout>
     </LinearLayout>
+    <LinearLayout android:id="@+id/det" android:visibility="gone" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginTop="3dp" android:paddingStart="12dp" android:paddingEnd="12dp" android:paddingTop="3dp" android:paddingBottom="3dp" android:background="@drawable/widget_detail_bg">
+        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
+            <TextView android:id="@+id/dlab" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textSize="10sp" android:textStyle="bold" android:textColor="#C3D3E4" android:maxLines="1"/>
+            <TextView android:id="@+id/dtit" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textSize="20sp" android:textStyle="bold" android:textColor="#FFFFFF" android:maxLines="1"/>
+        </LinearLayout>
+        <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="end">
+            <TextView android:id="@+id/dsu1" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textSize="12sp" android:textColor="#E8EEF5" android:maxLines="1"/>
+            <TextView android:id="@+id/dsu2" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textSize="12sp" android:textColor="#E8EEF5" android:maxLines="1"/>
+        </LinearLayout>
+    </LinearLayout>
     <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="3dp" android:paddingStart="6dp" android:paddingEnd="6dp">
-        <TextView android:id="@+id/sunl" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textSize="10sp" android:textColor="#B9CCE0" android:maxLines="1"/>
+        <TextView android:id="@+id/sunl" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textSize="10sp" android:textColor="#E8EEF5" android:maxLines="1"/>
         <TextView android:id="@+id/sunv" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="4dp" android:textSize="10sp" android:textStyle="bold" android:textColor="#F0D78C" android:maxLines="1"/>
     </LinearLayout>
 </LinearLayout>

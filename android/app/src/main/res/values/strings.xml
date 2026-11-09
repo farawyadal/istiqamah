@@ -5,5 +5,5 @@
     <string name="package_name">com.farawyadal.istiqamah</string>
     <string name="custom_url_scheme">com.farawyadal.istiqamah</string>
     <string name="wd_waktu">Waktu solat hari ini (4x1, boleh ditarik ke 4x2)</string>
-    <string name="wd_zikir">Kaunter zikir, ketik untuk mengira</string>
+    <string name="wd_zikir">Kaunter zikir, klik untuk mengira</string>
 </resources>
