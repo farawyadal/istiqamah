@@ -2,7 +2,7 @@
 (function () {
   'use strict';
   var L = window.IstiLogic, I18N = window.ISTI_I18N, ZONES = window.ISTI_ZONES, ZPTS = window.ISTI_ZONEPTS || [];
-  var APP_VERSION = '0.7.0';
+  var APP_VERSION = '0.7.1';
   var params = new URLSearchParams(location.search);
   var Cap = window.Capacitor;
   var isNative = !!(Cap && Cap.isNativePlatform && Cap.isNativePlatform());
@@ -179,7 +179,7 @@
   };
 
   function nav() {
-    var lagiGroup = ['lagi', 'tetapan', 'tentang', 'qiam', 'kal', 'kiblat', 'hadis', 'khatam', 'cab', 'cabnew', 'pss', 'umr'].indexOf(screen) >= 0;
+    var lagiGroup = ['lagi', 'tetapan', 'tentang', 'qiam', 'kal', 'kiblat', 'hadis', 'khatam', 'cab', 'cabnew', 'pss', 'umr', 'rnk', 'buk'].indexOf(screen) >= 0;
     function tab(go, on, icon, label) {
       return '<button data-go="' + go + '" class="' + (on ? 'on' : '') + '" aria-current="' + (on ? 'page' : 'false') + '">' + icon + label + '</button>';
     }
@@ -278,7 +278,7 @@
   }
 
   function viewLagi() {
-    var soon = [['mas', 'masjid', ICON.mosque], ['azn', 'azan', ICON.speaker], ['buk', 'buku', ICON.book], ['rnk', 'ranking', ICON.bars], ['zkt', 'zakat', ICON.plus], ['haj', 'haji', ICON.doc]];
+    var soon = [['mas', 'masjid', ICON.mosque], ['azn', 'azan', ICON.speaker], ['zkt', 'zakat', ICON.plus], ['haj', 'haji', ICON.doc]];
     return '<header class="banner plain">' + ICON.star + '<div class="pt">' + u('lagi') + '</div><div class="ps">' + u('lagiSub') + '</div></header>' +
       '<main class="scroll"><div class="grid">' +
       '<button class="tile" data-go="qiam">' + ICON.moon + u('qiam') + '</button>' +
@@ -289,6 +289,8 @@
       '<button class="tile" data-go="khatam">' + ICON.book + u('khatam') + '</button>' +
       '<button class="tile" data-go="cab">' + ICON.flag + u('cabaran') + '</button>' +
       '<button class="tile" data-go="umr">' + ICON.doc + u('umrah') + '</button>' +
+      '<button class="tile" data-go="rnk">' + ICON.bars + u('ranking') + '</button>' +
+      '<button class="tile" data-go="buk">' + ICON.book + u('buku') + '</button>' +
       '<button class="tile" data-go="tetapan">' + ICON.gear + u('tetapan') + '</button>' +
       '<button class="tile" data-go="tentang">' + ICON.info + u('tentang') + '</button></div>' +
       '<div class="sech" style="display:flex;justify-content:space-between"><span>' + u('akanDatang') + '</span><span style="font-weight:500;letter-spacing:0;color:var(--muted)">' + u('akanDatangNota') + '</span></div>' +
@@ -776,6 +778,8 @@
     else if (screen === 'cabnew') html = viewCabNew();
     else if (screen === 'pss') html = viewPuasa();
     else if (screen === 'umr') html = viewUmrah();
+    else if (screen === 'rnk') html = viewRank();
+    else if (screen === 'buk') html = viewBuku();
     else if (screen === 'qiam') html = viewQiam();
     else if (screen === 'kal') html = viewKal();
     else if (screen === 'kiblat') html = viewKiblat();
@@ -806,7 +810,7 @@
 
   function go(s, push) {
     screen = s;
-    if (push && (['zkat', 'hadis', 'khatam', 'cab', 'cabnew', 'pss', 'umr'].indexOf(s) >= 0 || s === 'tetapan' || s === 'tentang' || s === 'qiam' || s === 'kal' || s === 'kiblat')) history.pushState({ s: s }, '');
+    if (push && (['zkat', 'hadis', 'khatam', 'cab', 'cabnew', 'pss', 'umr', 'rnk', 'buk'].indexOf(s) >= 0 || s === 'tetapan' || s === 'tentang' || s === 'qiam' || s === 'kal' || s === 'kiblat')) history.pushState({ s: s }, '');
     render();
     if (s === 'utama') refreshData(false);
   }
@@ -968,6 +972,46 @@
       '<div class="note" style="margin:10px 4px 0">' + tt('Senarai ini hanya ringkasan turutan untuk semakan sendiri. Cara dan bacaan sebenar, rujuk nota kursus dan mutawwif anda.', 'This is only a summary of the order for your own checking. For the exact method and recitations, refer to your course notes and mutawwif.') + '</div></main>';
   }
 
+
+  /* Ranking peribadi (mata, tahap, streak) */
+  var R = Object.assign({ log: {} }, load('isti.rank', {}));
+  function rSave() { save('isti.rank', R); }
+  function award(pts) { var t = L.ymd(now()); R.log[t] = Math.max(0, (R.log[t] || 0) + pts); rSave(); }
+  var LVL = [0, 200, 800, 1500, 3000, 6000, 10000];
+  var LVN = [['Pemula', 'Beginner'], ['Perintis', 'Pioneer'], ['Penekun', 'Devoted'], ['Istiqamah', 'Steadfast'], ['Mujahid', 'Striver'], ['Muttaqin', 'God-fearing'], ['Abid', 'Worshipper']];
+  function rankInfo() {
+    var tot = 0, k; for (k in R.log) tot += R.log[k];
+    var lv = 0; for (var i = 0; i < LVL.length; i++) if (tot >= LVL[i]) lv = i;
+    var next = lv < LVL.length - 1 ? LVL[lv + 1] : null;
+    var pct = next ? Math.round((tot - LVL[lv]) / (next - LVL[lv]) * 100) : 100;
+    var keys = Object.keys(R.log).filter(function (x) { return R.log[x] > 0; }).sort();
+    var has = {}; keys.forEach(function (x) { has[x] = 1; });
+    var cur = 0, d = now(); if (!has[L.ymd(d)]) d = L.addDays(d, -1);
+    while (has[L.ymd(d)]) { cur++; d = L.addDays(d, -1); }
+    var best = 0, run = 0, prev = null;
+    keys.forEach(function (x) { run = prev && daysBetween(prev, x) === 1 ? run + 1 : 1; if (run > best) best = run; prev = x; });
+    return { tot: tot, lv: lv, next: next, pct: pct, cur: cur, best: Math.max(best, cur) };
+  }
+  function viewRank() {
+    var r = rankInfo(), en = S.lang === 'en', t0 = now(), days = [], mx = 1;
+    for (var i = 6; i >= 0; i--) { var d = L.addDays(t0, -i); days.push({ d: d, v: R.log[L.ymd(d)] || 0 }); }
+    days.forEach(function (x) { if (x.v > mx) mx = x.v; });
+    var bars = days.map(function (x, i) {
+      return '<div class="rbc"><div class="rb' + (i === 6 ? ' td' : '') + '" style="height:' + Math.max(3, Math.round(x.v / mx * 70)) + 'px"></div><span>' + T().ui.hari[x.d.getDay()].slice(0, 3) + '</span></div>';
+    }).join('');
+    var pts = [['Zikir capai sasaran', 'Dhikr target reached', 5], ['Tasbih selepas solat selesai', 'Post-prayer tasbih complete', 10], ['Tanda cabaran hari ini', 'Challenge marked today', 10], ['Satu juzuk dibaca', 'One juz read', 10], ['Puasa sunat', 'Sunnah fast', 20], ['Item Qiamullail', 'Qiyam al-Layl item', 5], ['Cabaran selesai', 'Challenge completed', 50]];
+    return topbar(tt('Ranking Saya', 'My Ranking'), true) + '<main class="scroll">' +
+      '<div class="rhero"><div class="rhl">' + tt('TAHAP ', 'LEVEL ') + (r.lv + 1) + ' · ' + LVN[r.lv][en ? 1 : 0].toUpperCase() + '</div><div class="rbig">' + r.tot.toLocaleString() + ' <span>' + tt('mata', 'points') + '</span></div>' +
+      '<div class="rpb"><div style="width:' + r.pct + '%"></div></div><div class="rhs">' + (r.next ? tt((r.next - r.tot) + ' mata lagi ke Tahap ' + (r.lv + 2) + ' · ' + LVN[r.lv + 1][0], (r.next - r.tot) + ' points to Level ' + (r.lv + 2) + ' · ' + LVN[r.lv + 1][1]) : tt('Tahap tertinggi dicapai', 'Top level reached')) + '</div></div>' +
+      '<div class="rrow"><div class="rbox"><b>' + tt('BERTURUT-TURUT', 'CURRENT STREAK') + '</b><span>' + r.cur + ' ' + tt('hari', 'days') + (r.cur > 0 ? ' 🔥' : '') + '</span></div><div class="rbox"><b>' + tt('TERPANJANG', 'LONGEST') + '</b><span>' + r.best + ' ' + tt('hari', 'days') + '</span></div></div>' +
+      '<div class="card" style="margin-top:10px"><span class="lbl gold" style="margin-bottom:6px">' + tt('MATA 7 HARI LEPAS', 'POINTS, LAST 7 DAYS') + '</span><div class="rbars">' + bars + '</div></div>' +
+      '<div class="card"><span class="lbl gold" style="margin-bottom:6px">' + tt('BAGAIMANA MATA DIPEROLEH', 'HOW POINTS ARE EARNED') + '</span>' + pts.map(function (x) { return '<div class="rpt"><span>' + x[en ? 1 : 0] + '</span><b>+' + x[2] + '</b></div>'; }).join('') + '</div>' +
+      '<div class="note" style="margin:6px 4px 0">' + tt('Hari dikira berturut bila ada sekurang-kurangnya satu amalan. Data hanya pada telefon ini. Tiada ranking dengan orang lain.', 'A day counts toward the streak when you do at least one deed. Data stays on this phone. There is no ranking against other people.') + '</div></main>';
+  }
+  function viewBuku() {
+    return topbar(u('buku'), true) + '<main class="scroll"><div class="bkempty"><div style="font-size:40px">📚</div><div class="bkt">' + tt('Akan datang', 'Coming soon') + '</div><div class="note" style="margin-top:6px">' + tt('Senarai buku agama pilihan akan dipaparkan di sini, insya-Allah.', 'A list of recommended Islamic books will appear here, insha’Allah.') + '</div></div></main>';
+  }
+
   /* ---------- notifikasi ---------- */
   var NT = { ms: { f: 'Masuk waktu ', s: 'Waktu sunat ' }, en: { f: 'It is time for ', s: 'Sunnah time: ' } };
   var NOTIF_DAYS = 7;
@@ -1095,7 +1139,7 @@
     }
     if (el.dataset.qchk) {
       var qi = Q.done.indexOf(el.dataset.qchk);
-      if (qi >= 0) Q.done.splice(qi, 1); else Q.done.push(el.dataset.qchk);
+      if (qi >= 0) { Q.done.splice(qi, 1); award(-5); } else { Q.done.push(el.dataset.qchk); award(5); }
       qSave(); return render();
     }
     if (el.dataset.qdel) { Q.items = Q.items.filter(function (i) { return i.id !== el.dataset.qdel; }); qSave(); return render(); }
@@ -1106,9 +1150,9 @@
     if (a === 'hdopen') { var hi = +el.dataset.n; hdOpen = hdOpen === hi ? -1 : hi; return render(); }
     if (a === 'hdshare') { var hh = F.hadis[+el.dataset.n], k2 = S.lang === 'en' ? 1 : 0; return shareText(hh[k2] + '\n' + hh[2 + k2] + '\n(' + hh[4] + ')\n— Istiqamah'); }
     if (a === 'hdpdf') { location.href = F.pdf; return; }
-    if (a === 'kjz') { var jn = +el.dataset.n; K.upTo = jn === K.upTo ? jn - 1 : jn; kSave(); return render(); }
+    if (a === 'kjz') { var jn = +el.dataset.n, mc = K.claimed || 0; if (jn > mc) { award((jn - mc) * 10); K.claimed = jn; } K.upTo = jn === K.upTo ? jn - 1 : jn; kSave(); return render(); }
     if (a === 'kshare') return shareText(tt('Khatam Quran: ', 'Quran completion: ') + K.upTo + '/30 ' + tt('juzuk', 'juz') + '\n— Istiqamah');
-    if (a === 'knext') { K.count++; K.upTo = 0; K.start = L.ymd(now()); kSave(); return render(); }
+    if (a === 'knext') { K.count++; K.upTo = 0; K.claimed = 0; K.start = L.ymd(now()); kSave(); return render(); }
     if (a === 'kquran') { location.href = 'https://quran.com'; return; }
     if (a === 'cabadd') {
       var ct = F.cab.filter(function (x) { return x[0] === el.dataset.k; })[0];
@@ -1117,7 +1161,7 @@
     }
     if (a === 'cabtick') {
       var cc = C.list.filter(function (x) { return x.id === el.dataset.id; })[0], td = L.ymd(now());
-      if (cc) { var ix = cc.done.indexOf(td); if (ix >= 0) cc.done.splice(ix, 1); else { cc.done.push(td); if (cc.target > 0 && cc.done.length === cc.target) toast(tt('Alhamdulillah, cabaran selesai!', 'Alhamdulillah, challenge complete!')); } cSave(); }
+      if (cc) { var ix = cc.done.indexOf(td); if (ix >= 0) { cc.done.splice(ix, 1); award(-10); } else { cc.done.push(td); award(10); if (cc.target > 0 && cc.done.length === cc.target) { award(50); } if (cc.target > 0 && cc.done.length === cc.target) toast(tt('Alhamdulillah, cabaran selesai!', 'Alhamdulillah, challenge complete!')); } cSave(); }
       return render();
     }
     if (a === 'cabdel') { C.list = C.list.filter(function (x) { return x.id !== el.dataset.id; }); cSave(); return render(); }
@@ -1134,7 +1178,7 @@
       C.list.push({ id: uid(), n: nm, target: tgt, start: cn.start || L.ymd(now()), done: [] }); cSave();
       cn = { dur: 'none', days: 30, name: '', start: '' }; screen = 'cab'; return render();
     }
-    if (a === 'ptick') { P.done[el.dataset.d] = !P.done[el.dataset.d]; pSave(); return render(); }
+    if (a === 'ptick') { P.done[el.dataset.d] = !P.done[el.dataset.d]; award(P.done[el.dataset.d] ? 20 : -20); pSave(); return render(); }
     if (a === 'utick') { var un = el.dataset.n; UM.done[un] = !UM.done[un]; uSave(); return render(); }
     if (a === 'ureset') { UM.done = {}; uSave(); return render(); }
     if (a === 'zcount') {
@@ -1145,11 +1189,11 @@
       if (grp && n1 >= zt) {
         buzz([80, 50, 100]);
         if (Z.step < 2) { Z.step++; toast(u('zSeterusnya').replace('{n}', zFind(ZG[Z.step]).n)); }
-        else { Z.gdone = true; toast(u('gSelesai')); }
+        else { Z.gdone = true; award(10); toast(u('gSelesai')); }
         zSave(); widgetSync(); return render();
       }
       zSave(); widgetSync(); buzz(n1 === zt ? [80, 50, 100] : 60);
-      if (!grp && n1 === zt) toast(u('zCapai'));
+      if (!grp && n1 === zt) { award(5); toast(u('zCapai')); }
       return zRefresh();
     }
     if (a === 'zreset') {
