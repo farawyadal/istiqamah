@@ -2,7 +2,7 @@
 (function () {
   'use strict';
   var L = window.IstiLogic, I18N = window.ISTI_I18N, ZONES = window.ISTI_ZONES, ZPTS = window.ISTI_ZONEPTS || [];
-  var APP_VERSION = '0.6.2';
+  var APP_VERSION = '0.7.0';
   var params = new URLSearchParams(location.search);
   var Cap = window.Capacitor;
   var isNative = !!(Cap && Cap.isNativePlatform && Cap.isNativePlatform());
@@ -179,7 +179,7 @@
   };
 
   function nav() {
-    var lagiGroup = ['lagi', 'tetapan', 'tentang', 'qiam', 'kal', 'kiblat'].indexOf(screen) >= 0;
+    var lagiGroup = ['lagi', 'tetapan', 'tentang', 'qiam', 'kal', 'kiblat', 'hadis', 'khatam', 'cab', 'cabnew', 'pss', 'umr'].indexOf(screen) >= 0;
     function tab(go, on, icon, label) {
       return '<button data-go="' + go + '" class="' + (on ? 'on' : '') + '" aria-current="' + (on ? 'page' : 'false') + '">' + icon + label + '</button>';
     }
@@ -278,13 +278,17 @@
   }
 
   function viewLagi() {
-    var soon = [['mas', 'masjid', ICON.mosque], ['azn', 'azan', ICON.speaker], ['pss', 'puasaSunat', ICON.moon.replace('#7A5C12', '#9A8F6E')], ['cab', 'cabaran', ICON.flag], ['kha', 'khatam', ICON.book],
-      ['umr', 'umrah', ICON.doc], ['buk', 'buku', ICON.book], ['rnk', 'ranking', ICON.bars], ['hds', 'hadisHari', ICON.doc], ['zkt', 'zakat', ICON.plus], ['haj', 'haji', ICON.doc]];
+    var soon = [['mas', 'masjid', ICON.mosque], ['azn', 'azan', ICON.speaker], ['buk', 'buku', ICON.book], ['rnk', 'ranking', ICON.bars], ['zkt', 'zakat', ICON.plus], ['haj', 'haji', ICON.doc]];
     return '<header class="banner plain">' + ICON.star + '<div class="pt">' + u('lagi') + '</div><div class="ps">' + u('lagiSub') + '</div></header>' +
       '<main class="scroll"><div class="grid">' +
       '<button class="tile" data-go="qiam">' + ICON.moon + u('qiam') + '</button>' +
       '<button class="tile" data-go="kal">' + ICON.cal + u('kal') + '</button>' +
       '<button class="tile" data-go="kiblat">' + ICON.compass + u('kiblat') + '</button>' +
+      '<button class="tile" data-go="hadis">' + ICON.doc + u('hadisHari') + '</button>' +
+      '<button class="tile" data-go="pss">' + ICON.moon.replace('#7A5C12', '#9A8F6E') + u('puasaSunat') + '</button>' +
+      '<button class="tile" data-go="khatam">' + ICON.book + u('khatam') + '</button>' +
+      '<button class="tile" data-go="cab">' + ICON.flag + u('cabaran') + '</button>' +
+      '<button class="tile" data-go="umr">' + ICON.doc + u('umrah') + '</button>' +
       '<button class="tile" data-go="tetapan">' + ICON.gear + u('tetapan') + '</button>' +
       '<button class="tile" data-go="tentang">' + ICON.info + u('tentang') + '</button></div>' +
       '<div class="sech" style="display:flex;justify-content:space-between"><span>' + u('akanDatang') + '</span><span style="font-weight:500;letter-spacing:0;color:var(--muted)">' + u('akanDatangNota') + '</span></div>' +
@@ -766,6 +770,12 @@
     if (screen === 'utama') html = viewUtama();
     else if (screen === 'zikir') html = viewZikir();
     else if (screen === 'zkat') html = viewZkat();
+    else if (screen === 'hadis') html = viewHadis();
+    else if (screen === 'khatam') html = viewKhatam();
+    else if (screen === 'cab') html = viewCab();
+    else if (screen === 'cabnew') html = viewCabNew();
+    else if (screen === 'pss') html = viewPuasa();
+    else if (screen === 'umr') html = viewUmrah();
     else if (screen === 'qiam') html = viewQiam();
     else if (screen === 'kal') html = viewKal();
     else if (screen === 'kiblat') html = viewKiblat();
@@ -774,7 +784,7 @@
     else if (screen === 'tetapan') html = viewTetapan();
     else html = viewTentang();
     var withNav = !firstRun;
-    root.className = screen === 'zikir' || screen === 'zkat' || screen === 'kiblat' ? 'dark' : '';
+    root.className = screen === 'zikir' || screen === 'zkat' || screen === 'kiblat' || screen === 'khatam' ? 'dark' : '';
     root.innerHTML = '<div class="screen">' + html + '</div>' + (withNav ? nav() : '');
     var m1 = root.querySelector('main.scroll') || root.querySelector('.zscroll');
     if (m1 && mScreen === screen && mTop) m1.scrollTop = mTop; // kekal di tempat yang sama selepas ketik
@@ -796,11 +806,167 @@
 
   function go(s, push) {
     screen = s;
-    if (push && (s === 'zkat' || s === 'tetapan' || s === 'tentang' || s === 'qiam' || s === 'kal' || s === 'kiblat')) history.pushState({ s: s }, '');
+    if (push && (['zkat', 'hadis', 'khatam', 'cab', 'cabnew', 'pss', 'umr'].indexOf(s) >= 0 || s === 'tetapan' || s === 'tentang' || s === 'qiam' || s === 'kal' || s === 'kiblat')) history.pushState({ s: s }, '');
     render();
     if (s === 'utama') refreshData(false);
   }
-  window.addEventListener('popstate', function () { if (!firstRun) { screen = screen === 'zkat' ? 'zikir' : 'lagi'; render(); } });
+  window.addEventListener('popstate', function () { if (!firstRun) { screen = screen === 'zkat' ? 'zikir' : screen === 'cabnew' ? 'cab' : 'lagi'; render(); } });
+
+
+  /* ----- Ciri baharu: Hadis, Khatam, Cabaran, Puasa Sunat, Umrah ----- */
+  var F = window.ISTI_FITUR || { hadis: [], umrah: [], cab: [], pdf: '' };
+  function tt(a, b) { return S.lang === 'en' ? b : a; }
+  function dayIndex(d) { return Math.floor((d.getTime() - d.getTimezoneOffset() * 60000) / 86400000); }
+  function daysBetween(a, b) {
+    var pa = a.split('-'), pb = b.split('-');
+    return Math.round((new Date(+pb[0], pb[1] - 1, +pb[2]) - new Date(+pa[0], pa[1] - 1, +pa[2])) / 86400000);
+  }
+  function shareText(txt) {
+    if (navigator.share) navigator.share({ text: txt }).catch(function () { /* batal */ });
+    else toast(tt('Perkongsian tidak disokong pada peranti ini', 'Sharing is not supported on this device'));
+  }
+  function ymdLabel(ymd) { var p = ymd.split('-'); return +p[2] + ' ' + T().ui.bulanM[p[1] - 1] + ' ' + p[0]; }
+  function hjOf(d, adj) { var h = L.hijriAt(d, adj); return h.d + ' ' + T().ui.bulanH[h.m - 1]; }
+
+  /* Hadis */
+  var hdOpen = -1;
+  function viewHadis() {
+    var H = F.hadis, d = now(), ti = dayIndex(d) % H.length, h = H[ti], en = S.lang === 'en', k = en ? 1 : 0;
+    var hero = '<section class="hero hadhero"><div class="hl">' + tt('HADIS HARI INI', 'HADITH OF THE DAY') + ' · ' + tt('Hadis ke-', 'Hadith ') + (ti + 1) + '</div><div class="hn">' + esc(h[k]) + '</div>' +
+      '<div class="hbody">' + esc(h[2 + k]) + '</div><div class="hsrc">' + esc(h[4]) + '</div>' +
+      '<button class="hshare" data-act="hdshare" data-n="' + ti + '">' + tt('Kongsi', 'Share') + '</button></section>';
+    var rows = H.map(function (x, i) {
+      var open = hdOpen === i;
+      return '<button class="hrow' + (open ? ' on' : '') + '" data-act="hdopen" data-n="' + i + '" aria-expanded="' + open + '"><span class="hn2">' + (i + 1) + '</span><span class="ht">' + esc(x[k]) + '</span></button>' +
+        (open ? '<div class="hdet"><div>' + esc(x[2 + k]) + '</div><div class="hsrc2">' + esc(x[4]) + '</div></div>' : '');
+    }).join('');
+    return topbar(u('hadisHari'), true) + '<main class="scroll">' + hero +
+      '<div class="sech">' + tt('SEMUA 42 HADIS', 'ALL 42 HADITHS') + '</div><div class="hlist">' + rows + '</div>' +
+      '<div class="note" style="margin:10px 4px 0">' + tt('Ringkasan dalam bahasa sendiri berdasarkan Hadis 40 Imam Nawawi (sebenarnya 42 hadis). Ia bukan teks penuh. Rujuk kitab untuk lafaz sebenar dan huraian.', 'Plain-language summaries based on Imam an-Nawawi’s Forty Hadith (42 in total). Not the full text. Refer to the book for the exact wording and explanation.') + '</div>' +
+      '<button class="btn wide ghost" data-act="hdpdf" style="margin-top:10px">' + tt('Buka kitab penuh (PDF)', 'Open the full book (PDF)') + '</button></main>';
+  }
+
+  /* Khatam Quran */
+  var K = Object.assign({ upTo: 0, start: '', count: 1 }, load('isti.khatam', {}));
+  if (!K.start) K.start = L.ymd(now());
+  function kSave() { save('isti.khatam', K); }
+  function viewKhatam() {
+    var today = L.ymd(now()), days = Math.max(1, daysBetween(K.start, today) + 1), up = Math.min(30, K.upTo || 0);
+    var pct = Math.round(up / 30 * 100), avg = up / days, eta = '-';
+    if (up >= 30) eta = tt('Khatam', 'Completed');
+    else if (up > 0) {
+      var need = Math.ceil((30 - up) / avg), ed = L.addDays(now(), need);
+      eta = ed.getDate() + ' ' + T().ui.bulanM[ed.getMonth()];
+    }
+    var grid = '';
+    for (var n = 1; n <= 30; n++) {
+      var done = n <= up, nx = n === up + 1;
+      grid += '<button class="jz' + (done ? ' on' : nx ? ' nx' : '') + '" data-act="kjz" data-n="' + n + '" aria-pressed="' + done + '" aria-label="' + tt('Juzuk ', 'Juz ') + n + (done ? ', ' + tt('sudah dibaca', 'read') : '') + '">' + n + '</button>';
+    }
+    return topbar(u('khatam'), true) + '<div class="zscroll kscroll">' +
+      '<div class="ksub">' + tt('Khatam kali ke-', 'Completion no. ') + K.count + ' · ' + tt('tiada tempoh', 'no time limit') + '</div>' +
+      '<div class="kring"><svg width="160" height="160" viewBox="0 0 160 160" fill="none" aria-hidden="true"><circle cx="80" cy="80" r="64" stroke="#1C4268" stroke-width="12"/><circle cx="80" cy="80" r="64" stroke="#E3C46F" stroke-width="12" stroke-linecap="round" stroke-dasharray="' + (up / 30 * 402.1).toFixed(1) + ' 402.1" transform="rotate(-90 80 80)"/></svg>' +
+      '<div class="kin"><b>' + pct + '%</b><span>' + up + ' / 30 ' + tt('juzuk', 'juz') + '</span></div></div>' +
+      '<div class="kstats"><div><span>' + tt('Hari', 'Day') + '</span><b>' + tt('Ke-', '') + days + '</b></div><div><span>' + tt('Purata', 'Average') + '</span><b>' + avg.toFixed(1) + ' ' + tt('juzuk/hari', 'juz/day') + '</b></div><div><span>' + tt('Anggaran khatam', 'Est. finish') + '</span><b>' + eta + '</b></div></div>' +
+      '<div class="krow2"><label class="kdate">' + tt('Tarikh mula', 'Start date') + '<input id="kstart" type="date" value="' + K.start + '" max="' + today + '"></label>' +
+      '<button class="kbtn" data-act="kshare">' + tt('Kongsi', 'Share') + '</button></div>' +
+      '<div class="klbl">' + tt('Ketik juzuk terakhir yang sudah dibaca', 'Tap the last juz you have read') + '</div><div class="kgrid">' + grid + '</div>' +
+      (up >= 30 ? '<button class="kbtn gold" data-act="knext" style="margin:14px 20px 0;width:calc(100% - 40px)">' + tt('Mulakan khatam seterusnya', 'Start the next completion') + '</button>' : '') +
+      '<button class="kbtn" data-act="kquran" style="margin:14px 20px 24px;width:calc(100% - 40px)">' + tt('Baca di Quran.com', 'Read on Quran.com') + ' ›</button></div>';
+  }
+
+  /* Cabaran */
+  var C = Object.assign({ list: [] }, load('isti.cab', {}));
+  function cSave() { save('isti.cab', C); }
+  var cn = { dur: 'none', days: 30, name: '', start: '' };
+  function cabName(c) { if (c.k) { var t = F.cab.filter(function (x) { return x[0] === c.k; })[0]; if (t) return S.lang === 'en' ? t[2] : t[1]; } return c.n; }
+  function viewCab() {
+    var today = L.ymd(now());
+    var mine = C.list.map(function (c) {
+      var n = c.done.length, tg = c.target, ticked = c.done.indexOf(today) >= 0, fin = tg > 0 && n >= tg, day = Math.max(1, daysBetween(c.start, today) + 1);
+      var prog = tg > 0 ? n + ' / ' + tg : n + ' ' + tt('kali', 'times');
+      var sub = tt('Hari ke-', 'Day ') + day + ' · ' + tt('mula ', 'started ') + ymdLabel(c.start);
+      return '<div class="card cabc"><div class="cabh"><div><div class="cabn">' + esc(cabName(c)) + '</div><div class="cabs">' + sub + '</div></div><button class="cabx" data-act="cabdel" data-id="' + c.id + '" aria-label="' + u('buang') + '">✕</button></div>' +
+        '<div class="cabp"><b>' + prog + '</b>' + (fin ? '<span class="cabok">' + tt('Selesai ✓', 'Done ✓') + '</span>' : '') + '</div>' +
+        (tg > 0 ? '<div class="bar"><div style="width:' + Math.min(100, n / tg * 100) + '%"></div></div>' : '') +
+        '<button class="btn wide' + (ticked ? ' ghost' : '') + '" data-act="cabtick" data-id="' + c.id + '" style="margin-top:10px">' + (ticked ? tt('✓ Hari ini sudah ditanda (ketik untuk batal)', '✓ Done today (tap to undo)') : tt('Tanda siap hari ini', 'Mark today done')) + '</button>' +
+        '<button class="cabshare" data-act="cabshare" data-id="' + c.id + '">' + tt('Kongsi', 'Share') + '</button></div>';
+    }).join('') || '<div class="note" style="margin:0 4px 6px">' + tt('Belum ada cabaran. Pilih satu di bawah atau cipta sendiri.', 'No challenges yet. Pick one below or create your own.') + '</div>';
+    var avail = F.cab.filter(function (t) { return !C.list.some(function (c) { return c.k === t[0]; }); }).map(function (t) {
+      return '<div class="cabrow"><div><div class="cabn">' + esc(S.lang === 'en' ? t[2] : t[1]) + '</div><div class="cabs">' + t[3] + ' ' + tt('kali', 'times') + '</div></div><button class="btn sm" data-act="cabadd" data-k="' + t[0] + '" style="margin:0">' + tt('Mula', 'Start') + '</button></div>';
+    }).join('');
+    return topbar(u('cabaran'), true) + '<main class="scroll"><div class="sech" style="margin-top:4px">' + tt('CABARAN SAYA', 'MY CHALLENGES') + '</div>' + mine +
+      '<button class="btn wide ghost" data-go="cabnew" style="margin:6px 0 4px">+ ' + tt('Cipta cabaran sendiri', 'Create your own challenge') + '</button>' +
+      '<div class="sech">' + tt('CABARAN SEDIA ADA', 'READY-MADE CHALLENGES') + '</div><div class="card">' + (avail || '<div class="note" style="margin:0">' + tt('Semua sudah dimulakan.', 'All started.') + '</div>') + '</div>' +
+      '<div class="note" style="margin:6px 4px 0">' + tt('Papan kedudukan dalam talian belum ada. Kemajuan disimpan pada telefon ini sahaja.', 'There is no online leaderboard yet. Progress is stored on this phone only.') + '</div></main>';
+  }
+  function viewCabNew() {
+    var today = L.ymd(now());
+    var durs = [['none', tt('Tiada tempoh', 'No limit')], ['30', tt('30 hari', '30 days')], ['own', tt('Bilangan sendiri', 'Own number')]];
+    return topbar(tt('Cabaran Baharu', 'New Challenge'), 'cab') + '<main class="scroll">' +
+      '<div class="card"><span class="lbl">' + tt('NAMA CABARAN', 'CHALLENGE NAME') + '</span><input id="cnname" class="inp cin" maxlength="50" value="' + esc(cn.name) + '" placeholder="' + tt('Contoh: Baca al-Mulk setiap malam', 'e.g. Read al-Mulk every night') + '">' +
+      '<span class="lbl" style="margin-top:14px">' + tt('TEMPOH', 'DURATION') + '</span><div class="seg">' + durs.map(function (x) { return '<button class="' + (cn.dur === x[0] ? 'on' : '') + '" data-act="cabdur" data-v="' + x[0] + '" aria-pressed="' + (cn.dur === x[0]) + '">' + x[1] + '</button>'; }).join('') + '</div>' +
+      (cn.dur === 'own' ? '<input id="cndays" class="inp cin" type="number" inputmode="numeric" min="1" max="365" value="' + cn.days + '" style="margin-top:10px" aria-label="' + tt('Bilangan hari', 'Number of days') + '">' : '') +
+      '<span class="lbl" style="margin-top:14px">' + tt('TARIKH MULA', 'START DATE') + '</span><input id="cnstart" class="inp cin" type="date" value="' + (cn.start || today) + '"><div class="note">' + tt('Boleh pilih tarikh lepas jika sudah mula lebih awal.', 'You may pick a past date if you already started.') + '</div></div>' +
+      '<button class="btn wide" data-act="cabsave">' + tt('Cipta cabaran', 'Create challenge') + '</button></main>';
+  }
+  function cnRead() {
+    var a = document.getElementById('cnname'), b = document.getElementById('cndays'), c = document.getElementById('cnstart');
+    if (a) cn.name = a.value; if (b) cn.days = parseInt(b.value, 10) || 30; if (c && c.value) cn.start = c.value;
+  }
+
+  /* Puasa Sunat */
+  var P = Object.assign({ done: {} }, load('isti.puasa', {}));
+  function pSave() { save('isti.puasa', P); }
+  function puasaDay(d, adj) {
+    var h = L.hijriAt(d, adj), dow = d.getDay(), out = [], bad = null;
+    if (h.m === 9) return { wajib: true, tags: [], bad: null, h: h };
+    if (h.m === 10 && h.d === 1) bad = tt('Hari Raya Aidilfitri, haram berpuasa', 'Eid al-Fitr, fasting is forbidden');
+    if (h.m === 12 && h.d >= 10 && h.d <= 13) bad = h.d === 10 ? tt('Hari Raya Aidiladha, haram berpuasa', 'Eid al-Adha, fasting is forbidden') : tt('Hari Tasyrik, haram berpuasa', 'Days of Tashriq, fasting is forbidden');
+    if (bad) return { wajib: false, tags: [], bad: bad, h: h };
+    if (dow === 1) out.push(tt('Isnin', 'Monday'));
+    if (dow === 4) out.push(tt('Khamis', 'Thursday'));
+    if (h.d >= 13 && h.d <= 15) out.push(tt('Ayyamul Bidh', 'Ayyam al-Bid'));
+    if (h.m === 12 && h.d === 9) out.push(tt('Hari Arafah', 'Day of Arafah'));
+    if (h.m === 1 && h.d === 9) out.push(tt('Tasu’a', 'Tasu’a'));
+    if (h.m === 1 && h.d === 10) out.push(tt('Asyura', 'Ashura'));
+    if (h.m === 10 && h.d >= 2 && h.d <= 7) out.push(tt('Puasa 6 Syawal', '6 days of Shawwal'));
+    return { wajib: false, tags: out, bad: null, h: h };
+  }
+  function viewPuasa() {
+    var t0 = now(), adj = adjustFor(t0), today = L.ymd(t0), rows = '', cnt = 0, doneMonth = 0, td = puasaDay(t0, adj);
+    for (var key in P.done) { if (P.done[key] && key.slice(0, 7) === today.slice(0, 7)) doneMonth++; }
+    for (var i = 0; i < 45 && cnt < 14; i++) {
+      var d = L.addDays(t0, i), pd = puasaDay(d, adj), ymd = L.ymd(d);
+      if (!pd.tags.length && !pd.bad) continue;
+      cnt++;
+      var dn = i === 0 ? tt('Hari ini', 'Today') : i === 1 ? tt('Esok', 'Tomorrow') : '';
+      var on = !!P.done[ymd];
+      rows += '<div class="prow' + (pd.bad ? ' bad' : '') + '"><div class="pd"><b>' + T().ui.hari[d.getDay()].slice(0, 3) + ' ' + d.getDate() + '</b><span>' + T().ui.bulanM[d.getMonth()].slice(0, 3) + '</span></div>' +
+        '<div class="pm"><div class="pn">' + (pd.bad ? esc(pd.bad) : esc(pd.tags.join(' · '))) + '</div><div class="ps2">' + hjOf(d, adj) + (dn ? ' · ' + dn : '') + '</div></div>' +
+        (pd.bad ? '<span class="pnone"></span>' : '<button class="pchk' + (on ? ' on' : '') + '" data-act="ptick" data-d="' + ymd + '" aria-pressed="' + on + '" aria-label="' + tt('Tanda puasa', 'Mark fasted') + ' ' + ymd + '">' + (on ? '✓' : '') + '</button>') + '</div>';
+    }
+    var statusTxt = td.wajib ? tt('Ramadan: puasa wajib', 'Ramadan: obligatory fast') : td.bad ? td.bad : td.tags.length ? tt('Hari ini sunat berpuasa: ', 'Sunnah to fast today: ') + td.tags.join(' · ') : tt('Hari ini tiada puasa sunat khusus.', 'No specific sunnah fast today.');
+    return topbar(u('puasaSunat'), true) + '<main class="scroll">' +
+      '<section class="hero pshero"><div class="hl">' + tt('HARI INI', 'TODAY') + '</div><div class="hn">' + esc(statusTxt) + '</div><div class="hs">' + tt('Bulan ini: ', 'This month: ') + doneMonth + ' ' + tt('hari berpuasa sunat', 'sunnah fasts') + '</div></section>' +
+      '<div class="sech">' + tt('SENARAI AKAN DATANG', 'UPCOMING') + '</div><div class="plist">' + (rows || '<div class="note">-</div>') + '</div>' +
+      '<div class="note" style="margin:10px 4px 0">' + tt('Tarikh Hijrah dikira daripada data JAKIM dan Umm al-Qura, boleh berbeza sehari mengikut rukyah. Isnin dan Khamis setiap minggu, Ayyamul Bidh (13 hingga 15 Hijrah), Arafah, Tasu’a dan Asyura, serta 6 hari Syawal.', 'Hijri dates come from JAKIM and Umm al-Qura data and may differ by a day with moon sighting. Mondays and Thursdays, Ayyam al-Bid (13th to 15th), Arafah, Tasu’a and Ashura, and 6 days of Shawwal.') + '</div></main>';
+  }
+
+  /* Umrah */
+  var UM = Object.assign({ done: {} }, load('isti.umrah', {}));
+  function uSave() { save('isti.umrah', UM); }
+  function viewUmrah() {
+    var en = S.lang === 'en', n = 0;
+    var rows = F.umrah.map(function (x, i) {
+      var d = !!UM.done[i]; if (d) n++;
+      var tag = x[4] === 'R' ? tt('Rukun', 'Pillar') : tt('Sunat', 'Sunnah');
+      return '<button class="urow' + (d ? ' on' : '') + '" data-act="utick" data-n="' + i + '" aria-pressed="' + d + '"><span class="uc">' + (d ? '✓' : '') + '</span><span class="um"><b>' + (i + 1) + '. ' + esc(x[en ? 1 : 0]) + '</b><span>' + esc(x[en ? 3 : 2]) + '</span></span><span class="utag ' + x[4] + '">' + tag + '</span></button>';
+    }).join('');
+    return topbar(u('umrah'), true) + '<main class="scroll"><div class="card"><div class="ucount">' + n + ' / ' + F.umrah.length + '</div><div class="bar"><div style="width:' + (n / F.umrah.length * 100) + '%"></div></div></div>' +
+      '<div class="ulist">' + rows + '</div><button class="btn wide ghost" data-act="ureset" style="margin-top:10px">' + tt('Set semula senarai', 'Reset list') + '</button>' +
+      '<div class="note" style="margin:10px 4px 0">' + tt('Senarai ini hanya ringkasan turutan untuk semakan sendiri. Cara dan bacaan sebenar, rujuk nota kursus dan mutawwif anda.', 'This is only a summary of the order for your own checking. For the exact method and recitations, refer to your course notes and mutawwif.') + '</div></main>';
+  }
 
   /* ---------- notifikasi ---------- */
   var NT = { ms: { f: 'Masuk waktu ', s: 'Waktu sunat ' }, en: { f: 'It is time for ', s: 'Sunnah time: ' } };
@@ -937,6 +1103,40 @@
       var sk = el.dataset.sbell; S.sbells = S.sbells || {}; S.sbells[sk] = sbellOn(sk) ? 0 : 1; persist(); reschedule(); return render();
     }
     var a = el.dataset.act;
+    if (a === 'hdopen') { var hi = +el.dataset.n; hdOpen = hdOpen === hi ? -1 : hi; return render(); }
+    if (a === 'hdshare') { var hh = F.hadis[+el.dataset.n], k2 = S.lang === 'en' ? 1 : 0; return shareText(hh[k2] + '\n' + hh[2 + k2] + '\n(' + hh[4] + ')\n— Istiqamah'); }
+    if (a === 'hdpdf') { location.href = F.pdf; return; }
+    if (a === 'kjz') { var jn = +el.dataset.n; K.upTo = jn === K.upTo ? jn - 1 : jn; kSave(); return render(); }
+    if (a === 'kshare') return shareText(tt('Khatam Quran: ', 'Quran completion: ') + K.upTo + '/30 ' + tt('juzuk', 'juz') + '\n— Istiqamah');
+    if (a === 'knext') { K.count++; K.upTo = 0; K.start = L.ymd(now()); kSave(); return render(); }
+    if (a === 'kquran') { location.href = 'https://quran.com'; return; }
+    if (a === 'cabadd') {
+      var ct = F.cab.filter(function (x) { return x[0] === el.dataset.k; })[0];
+      if (ct) { C.list.push({ id: uid(), k: ct[0], n: ct[1], target: ct[3], start: L.ymd(now()), done: [] }); cSave(); }
+      return render();
+    }
+    if (a === 'cabtick') {
+      var cc = C.list.filter(function (x) { return x.id === el.dataset.id; })[0], td = L.ymd(now());
+      if (cc) { var ix = cc.done.indexOf(td); if (ix >= 0) cc.done.splice(ix, 1); else { cc.done.push(td); if (cc.target > 0 && cc.done.length === cc.target) toast(tt('Alhamdulillah, cabaran selesai!', 'Alhamdulillah, challenge complete!')); } cSave(); }
+      return render();
+    }
+    if (a === 'cabdel') { C.list = C.list.filter(function (x) { return x.id !== el.dataset.id; }); cSave(); return render(); }
+    if (a === 'cabshare') {
+      var cs = C.list.filter(function (x) { return x.id === el.dataset.id; })[0];
+      if (cs) shareText(cabName(cs) + ': ' + cs.done.length + (cs.target ? '/' + cs.target : '') + '\n— Istiqamah');
+      return;
+    }
+    if (a === 'cabdur') { cnRead(); cn.dur = el.dataset.v; return render(); }
+    if (a === 'cabsave') {
+      cnRead();
+      var nm = (cn.name || '').trim(); if (!nm) return document.getElementById('cnname').focus();
+      var tgt = cn.dur === '30' ? 30 : cn.dur === 'own' ? Math.max(1, Math.min(365, cn.days)) : 0;
+      C.list.push({ id: uid(), n: nm, target: tgt, start: cn.start || L.ymd(now()), done: [] }); cSave();
+      cn = { dur: 'none', days: 30, name: '', start: '' }; screen = 'cab'; return render();
+    }
+    if (a === 'ptick') { P.done[el.dataset.d] = !P.done[el.dataset.d]; pSave(); return render(); }
+    if (a === 'utick') { var un = el.dataset.n; UM.done[un] = !UM.done[un]; uSave(); return render(); }
+    if (a === 'ureset') { UM.done = {}; uSave(); return render(); }
     if (a === 'zcount') {
       var grp = Z.sel === 'g_solat', zi = zCur(), zt = zTarget(zi);
       if (grp && Z.gdone) return;
@@ -1007,6 +1207,7 @@
     }
   });
   root.addEventListener('change', function (e) {
+    if (e.target.id === 'kstart' && e.target.value) { K.start = e.target.value; kSave(); render(); return; }
     if (e.target.id === 'zsel') {
       S.zone = e.target.value; persist(); loadCache();
       if (!firstRun) { refreshData(true); } else refreshData(false);

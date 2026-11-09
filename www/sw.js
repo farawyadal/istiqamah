@@ -1,5 +1,5 @@
-const V='isti-v11';
-const FILES=['./','index.html','style.css','js/zones.js','js/zonepts.js','js/zikir.js','js/i18n.js','js/logic.js','js/app.js','manifest.webmanifest','icons/icon-192.png','img/duitnow-qr.jpg'];
+const V='isti-v12';
+const FILES=['./','index.html','style.css','js/zones.js','js/zonepts.js','js/zikir.js','js/fitur.js','js/i18n.js','js/logic.js','js/app.js','manifest.webmanifest','icons/icon-192.png','img/duitnow-qr.jpg'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(V).then(c=>c.addAll(FILES)).then(()=>self.skipWaiting()))});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x!==V).map(x=>caches.delete(x)))).then(()=>self.clients.claim()))});
 self.addEventListener('fetch',e=>{

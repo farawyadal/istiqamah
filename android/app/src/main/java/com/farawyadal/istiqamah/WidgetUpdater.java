@@ -35,9 +35,7 @@ final class WidgetUpdater {
             List<WidgetData.Item> items = WidgetData.items(r);
             long now = System.currentTimeMillis();
 
-            int[] ids = ids(ctx, m, SeterusnyaWidget.class);
-            if (ids.length > 0) m.updateAppWidget(ids, buildSeterus(ctx, r, items, now));
-            ids = ids(ctx, m, WaktuWidget.class);
+            int[] ids = ids(ctx, m, WaktuWidget.class);
             if (ids.length > 0) {
                 RemoteViews rv = buildWaktu(ctx, r, items, now, R.layout.widget_waktu);
                 if (Build.VERSION.SDK_INT >= 31) {
@@ -66,20 +64,6 @@ final class WidgetUpdater {
         Intent i = new Intent(ctx, MainActivity.class);
         i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
         return PendingIntent.getActivity(ctx, 0, i, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-    }
-
-    private static RemoteViews buildSeterus(Context ctx, JSONObject r, List<WidgetData.Item> items, long now) {
-        RemoteViews v = new RemoteViews(ctx.getPackageName(), R.layout.widget_seterus);
-        v.setTextViewText(R.id.lbl, WidgetData.label(r, "seterusnya", "Seterusnya").toUpperCase());
-        WidgetData.Item f = WidgetData.next(items, now, 1);
-        v.setTextViewText(R.id.name, f == null ? "-" : f.name);
-        v.setTextViewText(R.id.time, f == null ? "" : WidgetData.fmt12(r, f.at, true));
-        v.setTextViewText(R.id.slbl, WidgetData.label(r, "sunatNext", "Sunat seterusnya").toUpperCase());
-        WidgetData.Item s = WidgetData.next(items, now, 2);
-        v.setTextViewText(R.id.sname, s == null ? "-" : s.name);
-        v.setTextViewText(R.id.stime, s == null ? "" : WidgetData.fmt12(r, s.at, true));
-        v.setOnClickPendingIntent(R.id.root, openApp(ctx));
-        return v;
     }
 
     private static RemoteViews buildWaktu(Context ctx, JSONObject r, List<WidgetData.Item> items, long now, int layout) {
