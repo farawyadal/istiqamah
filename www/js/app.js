@@ -2,7 +2,7 @@
 (function () {
   'use strict';
   var L = window.IstiLogic, I18N = window.ISTI_I18N, ZONES = window.ISTI_ZONES, ZPTS = window.ISTI_ZONEPTS || [];
-  var APP_VERSION = '0.5.1';
+  var APP_VERSION = '0.6.0';
   var params = new URLSearchParams(location.search);
   var Cap = window.Capacitor;
   var isNative = !!(Cap && Cap.isNativePlatform && Cap.isNativePlatform());
@@ -23,8 +23,9 @@
   function esc(x) { return String(x).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function uid() { return 'c' + Date.now().toString(36) + Math.floor(Math.random() * 1000).toString(36); }
 
-  var ZDEF = [['subhanallah', 33], ['alhamdulillah', 33], ['akbar', 33], ['istighfar', 100]];
-  var Z = Object.assign({ sel: 'subhanallah', counts: {}, targets: {}, vibrate: true, custom: [] }, load('isti.zikir', {}));
+  var ZG = ['subhanallah', 'alhamdulillah', 'akbar'];
+  var Z = Object.assign({ sel: 'g_solat', step: 0, gdone: false, counts: {}, targets: {}, vibrate: true, custom: [], list: ['istighfar', 'lailaha'] }, load('isti.zikir', {}));
+  if (ZG.indexOf(Z.sel) >= 0) { Z.step = ZG.indexOf(Z.sel); Z.sel = 'g_solat'; }
   function zSave() { save('isti.zikir', Z); }
   var QDEF = ['q_taubat', 'q_tahajud', 'q_hajat', 'q_tasbih', 'q_witir', 'q_zikir', 'q_doa'];
   var Q = Object.assign({ items: QDEF.map(function (k) { return { id: k, key: k }; }), night: '', done: [] }, load('isti.qiam', {}));
@@ -182,7 +183,7 @@
     function tab(go, on, icon, label) {
       return '<button data-go="' + go + '" class="' + (on ? 'on' : '') + '" aria-current="' + (on ? 'page' : 'false') + '">' + icon + label + '</button>';
     }
-    return '<nav class="nav">' + tab('utama', screen === 'utama', ICON.home, u('utama')) + tab('zikir', screen === 'zikir', ICON.tasbih, u('zikir')) + tab('lagi', lagiGroup, ICON.grid, u('lagi')) + '</nav>';
+    return '<nav class="nav">' + tab('utama', screen === 'utama', ICON.home, u('utama')) + tab('zikir', screen === 'zikir' || screen === 'zkat', ICON.tasbih, u('zikir')) + tab('lagi', lagiGroup, ICON.grid, u('lagi')) + '</nav>';
   }
 
   function dateLine(d, h) {
@@ -293,7 +294,7 @@
   }
 
   function topbar(title, back) {
-    return '<div class="topbar">' + (back ? '<button class="back" data-go="lagi" aria-label="' + u('kembali') + '">' + ICON.back + '</button>' : '<span style="width:12px"></span>') + '<div class="tt">' + title + '</div></div>';
+    return '<div class="topbar">' + (back ? '<button class="back" data-go="' + (typeof back === 'string' ? back : 'lagi') + '" aria-label="' + u('kembali') + '">' + ICON.back + '</button>' : '<span style="width:12px"></span>') + '<div class="tt">' + title + '</div></div>';
   }
 
   function seg(name, val, items) {
@@ -434,7 +435,7 @@
       .then(function (j) {
         save('isti.updchk', Date.now());
         var apk = (j.assets || []).filter(function (a) { return /\.apk$/i.test(a.name); })[0];
-        U.state = 'ok';
+        U.state = 'ok'; U.checked = (function (d) { return ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2); })(new Date());
         U.newer = apk && L.newerVer(j.tag_name, APP_VERSION) ? { v: L.parseVer(j.tag_name).join('.'), url: apk.browser_download_url } : null;
         if (U.newer && !U.toasted) { U.toasted = true; toast(u('updToast')); }
         if (screen === 'tentang') render();
@@ -448,8 +449,10 @@
         '<div class="ut">' + u('updBody').replace('{n}', U.newer.v).replace('{o}', APP_VERSION) + '</div>' +
         '<button class="btn wide gold" data-act="upd">' + u('updBtn') + '</button><div class="un">' + u('updNota') + '</div></div>';
     }
-    return '<div class="card"><div class="lbl gold">' + u('updTerkini') + '</div>' +
-      '<button class="btn wide ghost" data-act="updcheck" style="margin-top:8px"' + (U.state === 'busy' ? ' disabled' : '') + '>' + (U.state === 'busy' ? u('updMenyemak') : u('updSemak')) + '</button></div>';
+    var busy = U.state === 'busy', tm = U.checked || (function (t) { if (!t) return ''; var d = new Date(t); return ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2); })(load('isti.updchk', 0));
+    return '<div class="card"><div class="okrow"><div class="okic">✓</div><div><div class="okt">' + (busy ? u('updMenyemak') : u('updTerkiniTitle')) + '</div><div class="oks">' +
+      (busy ? u('updTunggu') : u('updDisemak').replace('{v}', APP_VERSION).replace('{t}', tm)) + '</div></div></div>' +
+      '<button class="btn wide ghost" data-act="updcheck" style="margin-top:12px"' + (busy ? ' disabled' : '') + '>' + (busy ? u('updMenyemak2') : u('updSemak')) + '</button></div>';
   }
 
   function viewTentang() {
@@ -477,31 +480,83 @@
   }
 
   /* ----- Zikir ----- */
-  function zList() {
-    return ZDEF.map(function (d) { var z = T().zk[d[0]]; return { id: d[0], n: z[0], ar: z[1], t: d[1] }; })
-      .concat(Z.custom.map(function (c) { return { id: c.id, n: c.n, ar: '', t: c.t, custom: true }; }));
+  function zCat() { return (window.ISTI_ZIKIR && window.ISTI_ZIKIR.cat) || []; }
+  function zFind(id) {
+    var gi = ZG.indexOf(id);
+    if (gi >= 0) { var z = T().zk[id]; return { id: id, n: z[0], ar: z[1], t: 33, grp: true }; }
+    var c = zCat().filter(function (x) { return x.id === id; })[0];
+    if (c) return { id: c.id, n: c.n, ar: c.ar, t: c.t, m: c.m, s: c.s };
+    var cu = Z.custom.filter(function (x) { return x.id === id; })[0];
+    return cu ? { id: cu.id, n: cu.n, ar: '', t: cu.t, custom: true } : null;
   }
-  function zCur() { var l = zList(); return l.filter(function (x) { return x.id === Z.sel; })[0] || l[0]; }
-  function zTarget(it) { return Z.targets[it.id] || it.t; }
+  function zList() {
+    return Z.list.map(zFind).filter(Boolean)
+      .concat(Z.custom.map(function (c) { return zFind(c.id); }));
+  }
+  function zCur() {
+    if (Z.sel === 'g_solat') return zFind(ZG[Math.min(2, Z.step || 0)]);
+    return zFind(Z.sel) || zFind(ZG[0]);
+  }
+  function zTarget(it) { return it.grp ? 33 : (Z.targets[it.id] || it.t); }
+  function zToday() {
+    var d = now(), cat = zCat();
+    if (d.getDay() === 5) return cat.filter(function (x) { return x.id === 'selawat'; })[0];
+    var pool = cat.filter(function (x) { return x.id !== 'selawat'; });
+    var di = Math.floor((d.getTime() - d.getTimezoneOffset() * 60000) / 86400000);
+    return pool[di % pool.length];
+  }
+  function zl(arr) { return arr[S.lang === 'en' ? 1 : 0]; }
+  function arSize(t) { var n = t.length; return n <= 22 ? 34 : n <= 45 ? 28 : n <= 80 ? 24 : 21; }
   var CIRC = 691.15, zForm = false;
   function viewZikir() {
-    var it = zCur(), tg = zTarget(it), c = Z.counts[it.id] || 0, frac = Math.min(1, c / tg);
-    var rows = zList().map(function (x) {
-      return '<div class="zrow' + (x.id === it.id ? ' on' : '') + '"><button class="zsel" data-zsel="' + esc(x.id) + '" aria-pressed="' + (x.id === it.id) + '"><span>' + esc(x.n) + '</span><span class="zn">× ' + zTarget(x) + '</span></button>' +
-        (x.custom ? '<button class="zdel" data-zdel="' + esc(x.id) + '" aria-label="' + u('buang') + ' ' + esc(x.n) + '">✕</button>' : '') + '</div>';
+    var grp = Z.sel === 'g_solat', it = zCur(), tg = zTarget(it), c = Z.counts[it.id] || 0;
+    var gd = grp && Z.gdone, frac = Math.min(1, gd ? 1 : c / tg);
+    var td = zToday(), tdOn = !grp && Z.sel === td.id;
+    var tdCard = '<div class="ztoday"><div class="ztr"><span class="ztl">' + u('zHariIni') + ' · ' + u('hari')[now().getDay()].toUpperCase() + '</span><span class="ztn">' + u('zBertukar') + '</span></div>' +
+      '<div class="ztar" lang="ar" dir="rtl">' + esc(td.ar) + '</div><div class="ztm">' + esc(zl(td.m)) + '. ' + esc(zl(td.s)) + '.</div>' +
+      '<div class="ztr" style="margin-top:8px"><span class="ztn">' + u('sasaranLbl').replace('{n}', td.t) + '</span><button class="ztb' + (tdOn ? ' on' : '') + '" data-act="ztoday">' + (tdOn ? u('zSedang') : u('zMula')) + '</button></div></div>';
+    var steps = grp ? '<div class="zsteps">' + ZG.map(function (g, i) {
+      var st = gd || i < Z.step ? 'done' : i === Z.step ? 'now' : 'next';
+      return '<div class="zstep ' + st + '"><div class="zst">' + (st === 'done' ? '✓ ' : '') + (i + 1) + ' · 33</div><div class="zsn">' + esc(T().zk[g][0]) + '</div></div>';
+    }).join('') + '</div>' : '';
+    var single = Z.list.map(zFind).filter(Boolean).concat(Z.custom.map(function (cu) { return zFind(cu.id); }));
+    var rows = single.map(function (x) {
+      var rem = true;
+      return '<div class="zrow' + (!grp && x.id === it.id ? ' on' : '') + '"><button class="zsel" data-zsel="' + esc(x.id) + '" aria-pressed="' + (!grp && x.id === it.id) + '"><span>' + esc(x.n) + '</span><span class="zn">× ' + zTarget(x) + '</span></button>' +
+        (rem ? '<button class="zdel" data-zdel="' + esc(x.id) + '" aria-label="' + u('buang') + ' ' + esc(x.n) + '">✕</button>' : '') + '</div>';
     }).join('');
-    var form = zForm ? '<div class="zform"><input id="zname" class="inp" maxlength="40" placeholder="' + u('namaItem') + '" aria-label="' + u('namaItem') + '"><input id="zcnt" class="inp" type="number" inputmode="numeric" min="1" max="100000" value="33" aria-label="' + u('bilangan') + '"><div class="zbtns"><button class="zb gold" data-act="zsave">' + u('simpan') + '</button><button class="zb" data-act="zcancel">' + u('batal') + '</button></div></div>' : '';
-    return '<div class="zhead"><div><div class="pt">' + u('zikir') + '</div><div class="ps" id="zsub">' + u('zikirSub').replace('{n}', tg) + '</div></div><div class="zcur">' + esc(it.n) + '</div></div>' +
-      '<div class="zscroll"><button class="ring" data-act="zcount" aria-label="' + esc(it.n) + ' ' + u('ketikKira') + '">' +
-      '<svg class="ringsvg" width="260" height="260" viewBox="0 0 260 260" fill="none" aria-hidden="true"><circle cx="130" cy="130" r="110" stroke="#1C4268" stroke-width="12"/><circle id="zr" cx="130" cy="130" r="110" stroke="#E3C46F" stroke-width="12" stroke-linecap="round" stroke-dasharray="' + (frac * CIRC).toFixed(1) + ' ' + CIRC + '" transform="rotate(-90 130 130)"/></svg>' +
+    var sub = grp ? (gd ? u('gTitle') + ' · ' + u('gSelesai').toLowerCase() : u('gLangkah').replace('{i}', Math.min(2, Z.step) + 1)) : esc(it.n) + ' · ' + u('sasaranLbl').replace('{n}', tg).toLowerCase();
+    var ringIn = gd
+      ? '<span class="ringin zdone"><span class="zdt">' + u('gSelesai') + '</span><span class="zcnum" style="font-size:44px">99</span><span class="zof">' + u('gSelesaiSub') + '</span></span>'
+      : '<span class="ringin"><span class="zcnum" id="zc">' + c + '</span><span class="zof" id="zof">' + u('daripada').replace('{n}', tg) + '</span></span>';
+    var hint = gd ? u('zUlang') : (grp ? u('zHintGrp').replace('{n}', 33) : u('ketikKira'));
+    return '<div class="zhead"><div><div class="pt">' + u('zikir') + '</div><div class="ps" id="zsub">' + sub + '</div></div></div>' +
+      '<div class="zscroll">' + tdCard + steps +
+      '<div class="zar" id="zar" lang="ar" dir="rtl" style="font-size:' + arSize(it.ar || '') + 'px">' + (it.ar ? esc(it.ar) : '&nbsp;') + '</div>' +
+      '<button class="ring" data-act="zcount" aria-label="' + esc(it.n) + ' ' + u('ketikKira') + '">' +
+      '<svg class="ringsvg" width="260" height="260" viewBox="0 0 260 260" fill="none" aria-hidden="true"><circle cx="130" cy="130" r="110" stroke="#1C4268" stroke-width="12"/><circle id="zr" cx="130" cy="130" r="110" stroke="' + (gd ? '#3DDC97' : '#E3C46F') + '" stroke-width="12" stroke-linecap="round" stroke-dasharray="' + (frac * CIRC).toFixed(1) + ' ' + CIRC + '" transform="rotate(-90 130 130)"/></svg>' +
       '<svg width="200" height="200" viewBox="0 0 100 100" fill="none" stroke="#E3C46F" stroke-width="0.6" aria-hidden="true" class="ringstar"><rect x="18" y="18" width="64" height="64"/><rect x="18" y="18" width="64" height="64" transform="rotate(45 50 50)"/></svg>' +
-      '<span class="ringin"><span class="zar" lang="ar" dir="rtl">' + (it.ar ? esc(it.ar) : '&nbsp;') + '</span><span class="zcnum" id="zc">' + c + '</span><span class="zof" id="zof">' + u('daripada').replace('{n}', tg) + '</span></span></button>' +
-      '<div class="zhint">' + u('ketikKira') + '</div>' +
+      ringIn + '</button>' +
+      '<div class="zhint">' + hint + '</div>' +
       '<div class="zctl"><button data-act="zreset">' + '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12a8 8 0 1 0 3-6.2"/><path d="M4 4v4h4"/></svg>' + u('setSemula') + '</button>' +
       '<button data-act="zvib" aria-pressed="' + !!Z.vibrate + '"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="3" width="8" height="18" rx="2"/><path d="M4 8v8M20 8v8"/></svg>' + u('getar') + (Z.vibrate ? u('hidup') : u('mati')) + '</button>' +
-      '<button data-act="ztarget"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></svg>' + u('sasaran') + tg + '</button></div>' +
-      '<div class="zlh"><div class="zlt">' + u('senaraiZikir') + '</div><button class="zadd" data-act="zadd">' + u('tambah') + '</button></div>' + form +
+      (grp ? '' : '<button data-act="ztarget"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></svg>' + u('sasaran') + tg + '</button>') + '</div>' +
+      '<div class="zlh"><div class="zlt">' + u('senaraiZikir') + '</div><button class="zadd" data-go="zkat">' + u('tambah') + '</button></div>' +
+      '<div class="zgl">' + u('zKumpulan') + '</div>' +
+      '<button class="zgrp' + (grp ? ' on' : '') + '" data-zsel="g_solat" aria-pressed="' + grp + '"><span style="text-align:left"><span class="zgn">' + u('gTitle') + '</span><span class="zgs">' + u('gSub') + '</span></span><span class="zn">33 + 33 + 33</span></button>' +
+      '<div class="zgl" style="margin-top:12px">' + u('zSingle') + '</div>' +
       '<div class="zlist">' + rows + '</div></div>';
+  }
+  function viewZkat() {
+    var cat = zCat();
+    var items = cat.map(function (x) {
+      var on = Z.list.indexOf(x.id) >= 0;
+      return '<div class="zk"><div class="zkh"><div class="zkn">' + esc(x.n) + '</div><button class="zkb' + (on ? ' on' : '') + '" data-zkadd="' + esc(x.id) + '" aria-pressed="' + on + '">' + (on ? u('zDitambah') : u('zTambahBtn')) + '</button></div>' +
+        '<div class="zkar" lang="ar" dir="rtl">' + esc(x.ar) + '</div><div class="zkm">' + esc(zl(x.m)) + '</div><div class="zks">' + esc(zl(x.s)) + ' · ' + u('sasaranLbl').replace('{n}', x.t) + '</div></div>';
+    }).join('');
+    var form = zForm ? '<div class="zform"><input id="zname" class="inp" maxlength="40" placeholder="' + u('namaItem') + '" aria-label="' + u('namaItem') + '"><input id="zcnt" class="inp" type="number" inputmode="numeric" min="1" max="100000" value="33" aria-label="' + u('bilangan') + '"><div class="zbtns"><button class="zb gold" data-act="zsave">' + u('simpan') + '</button><button class="zb" data-act="zcancel">' + u('batal') + '</button></div></div>'
+      : '<button class="zkown" data-act="zadd">+ ' + u('zTulis') + '</button>';
+    return topbar(u('zkatTitle'), 'zikir') + '<div class="zscroll"><div class="zkintro">' + u('zkatSub') + '</div>' + items + '<div class="zkcus">' + form + '</div></div>';
   }
   function zRefresh() {
     var it = zCur(), tg = zTarget(it), c = Z.counts[it.id] || 0;
@@ -510,7 +565,14 @@
     document.getElementById('zr').setAttribute('stroke-dasharray', (Math.min(1, c / tg) * CIRC).toFixed(1) + ' ' + CIRC);
     document.getElementById('zof').textContent = u('daripada').replace('{n}', tg);
   }
-  function buzz(p) { try { if (Z.vibrate && navigator.vibrate) navigator.vibrate(p); } catch (e) { /* abaikan */ } }
+  function buzz(p) {
+    if (!Z.vibrate) return;
+    var H = isNative && Cap.Plugins ? Cap.Plugins.Haptics : null, dur = Array.isArray(p) ? p.reduce(function (a, b) { return a + b; }, 0) : p;
+    try {
+      if (H && H.vibrate) { H.vibrate({ duration: Math.max(10, dur) }); return; }
+      if (navigator.vibrate) navigator.vibrate(p);
+    } catch (e) { /* abaikan */ }
+  }
 
   /* ----- Qiamullail ----- */
   var qEdit = false, qForm = false;
@@ -679,7 +741,7 @@
   function pullZikir() {
     if (!WGT) return Promise.resolve();
     return WGT.getZikir().then(function (r) {
-      if (r && r.id && typeof r.c === 'number' && zList().some(function (x) { return x.id === r.id; })) {
+      if (r && r.id && typeof r.c === 'number' && zFind(r.id)) {
         if ((Z.counts[r.id] || 0) !== r.c) { Z.counts[r.id] = r.c; zSave(); if (screen === 'zikir') render(); }
       }
     }).catch(function () { /* abaikan */ }).then(function () { wReady = true; widgetSync(); });
@@ -695,11 +757,12 @@
   function render() {
     var scrollTop = 0, l0 = document.getElementById('list');
     if (l0) scrollTop = l0.scrollTop;
-    var m0 = root.querySelector('main.scroll'), mTop = m0 ? m0.scrollTop : 0, mScreen = renderedScreen;
+    var m0 = root.querySelector('main.scroll') || root.querySelector('.zscroll'), mTop = m0 ? m0.scrollTop : 0, mScreen = renderedScreen;
     var html;
     if (firstRun) screen = mulaDone ? 'tetapan' : 'mula';
     if (screen === 'utama') html = viewUtama();
     else if (screen === 'zikir') html = viewZikir();
+    else if (screen === 'zkat') html = viewZkat();
     else if (screen === 'qiam') html = viewQiam();
     else if (screen === 'kal') html = viewKal();
     else if (screen === 'kiblat') html = viewKiblat();
@@ -708,9 +771,9 @@
     else if (screen === 'tetapan') html = viewTetapan();
     else html = viewTentang();
     var withNav = !firstRun;
-    root.className = screen === 'zikir' || screen === 'kiblat' ? 'dark' : '';
+    root.className = screen === 'zikir' || screen === 'zkat' || screen === 'kiblat' ? 'dark' : '';
     root.innerHTML = '<div class="screen">' + html + '</div>' + (withNav ? nav() : '');
-    var m1 = root.querySelector('main.scroll');
+    var m1 = root.querySelector('main.scroll') || root.querySelector('.zscroll');
     if (m1 && mScreen === screen && mTop) m1.scrollTop = mTop; // kekal di tempat yang sama selepas ketik
     renderedScreen = screen;
     document.documentElement.lang = S.lang === 'en' ? 'en' : 'ms';
@@ -730,11 +793,11 @@
 
   function go(s, push) {
     screen = s;
-    if (push && (s === 'tetapan' || s === 'tentang' || s === 'qiam' || s === 'kal' || s === 'kiblat')) history.pushState({ s: s }, '');
+    if (push && (s === 'zkat' || s === 'tetapan' || s === 'tentang' || s === 'qiam' || s === 'kal' || s === 'kiblat')) history.pushState({ s: s }, '');
     render();
     if (s === 'utama') refreshData(false);
   }
-  window.addEventListener('popstate', function () { if (!firstRun) { screen = 'lagi'; render(); } });
+  window.addEventListener('popstate', function () { if (!firstRun) { screen = screen === 'zkat' ? 'zikir' : 'lagi'; render(); } });
 
   /* ---------- notifikasi ---------- */
   var NT = { ms: { f: 'Masuk waktu ', s: 'Waktu sunat ' }, en: { f: 'It is time for ', s: 'Sunnah time: ' } };
@@ -806,7 +869,14 @@
         return new Promise(function (res, rej) {
           var fr = new FileReader(); fr.onload = function () { res(fr.result); }; fr.onerror = rej; fr.readAsDataURL(b);
         });
-      }).then(function (data) { return Media.savePhoto({ path: data, fileName: 'Istiqamah-DuitNow-QR' }); })
+      }).then(function (data) {
+        return Media.getAlbumsPath().then(function (r) {
+          var base = r.path;
+          return Media.createAlbum({ name: 'Istiqamah' }).catch(function () { /* sudah ada */ }).then(function () {
+            return Media.savePhoto({ path: data, albumIdentifier: base + '/Istiqamah', fileName: 'Istiqamah-DuitNow-QR' });
+          });
+        });
+      })
         .then(function () { toast(u('qrDisimpan')); })
         .catch(function () { toast(u('qrGagal')); });
       return;
@@ -819,7 +889,7 @@
 
   /* ---------- acara ---------- */
   root.addEventListener('click', function (e) {
-    var el = e.target.closest('[data-go],[data-filter],[data-bell],[data-tar],[data-set],[data-act],[data-zsel],[data-zdel],[data-qchk],[data-qdel],[data-sbell]');
+    var el = e.target.closest('[data-go],[data-filter],[data-bell],[data-tar],[data-set],[data-act],[data-zsel],[data-zkadd],[data-zdel],[data-qchk],[data-qdel],[data-sbell]');
     if (!el) return;
     if (el.dataset.go) return go(el.dataset.go, true);
     if (el.dataset.filter) { filter = el.dataset.filter; return render(); }
@@ -843,8 +913,15 @@
     }
     if (el.dataset.zsel) { Z.sel = el.dataset.zsel; zSave(); return render(); }
     if (el.dataset.zdel) {
-      Z.custom = Z.custom.filter(function (c) { return c.id !== el.dataset.zdel; });
-      if (Z.sel === el.dataset.zdel) Z.sel = 'subhanallah';
+      var did = el.dataset.zdel;
+      Z.custom = Z.custom.filter(function (c) { return c.id !== did; });
+      Z.list = Z.list.filter(function (x) { return x !== did; });
+      if (Z.sel === did) Z.sel = 'g_solat';
+      zSave(); return render();
+    }
+    if (el.dataset.zkadd) {
+      var kid = el.dataset.zkadd, ki = Z.list.indexOf(kid);
+      if (ki >= 0) Z.list.splice(ki, 1); else Z.list.push(kid);
       zSave(); return render();
     }
     if (el.dataset.qchk) {
@@ -858,10 +935,26 @@
     }
     var a = el.dataset.act;
     if (a === 'zcount') {
-      var zi = zCur(), zt = zTarget(zi), n1 = (Z.counts[zi.id] || 0) + 1;
-      Z.counts[zi.id] = n1; zSave(); widgetSync(); buzz(n1 === zt ? [80, 50, 80] : 15); return zRefresh();
+      var grp = Z.sel === 'g_solat', zi = zCur(), zt = zTarget(zi);
+      if (grp && Z.gdone) return;
+      var n1 = (Z.counts[zi.id] || 0) + 1;
+      Z.counts[zi.id] = n1;
+      if (grp && n1 >= zt) {
+        buzz([80, 50, 80]);
+        if (Z.step < 2) { Z.step++; toast(u('zSeterusnya').replace('{n}', zFind(ZG[Z.step]).n)); }
+        else { Z.gdone = true; toast(u('gSelesai')); }
+        zSave(); widgetSync(); return render();
+      }
+      zSave(); widgetSync(); buzz(n1 === zt ? [80, 50, 80] : 15);
+      if (!grp && n1 === zt) toast(u('zCapai'));
+      return zRefresh();
     }
-    if (a === 'zreset') { Z.counts[zCur().id] = 0; zSave(); widgetSync(); return zRefresh(); }
+    if (a === 'zreset') {
+      if (Z.sel === 'g_solat') { ZG.forEach(function (g) { Z.counts[g] = 0; }); Z.step = 0; Z.gdone = false; }
+      else Z.counts[zCur().id] = 0;
+      zSave(); widgetSync(); return render();
+    }
+    if (a === 'ztoday') { var tdd = zToday(); Z.sel = tdd.id; zSave(); return render(); }
     if (a === 'zvib') { Z.vibrate = !Z.vibrate; zSave(); buzz(30); return render(); }
     if (a === 'ztarget') {
       var cur = zCur(), opts = [33, 99, 100], ix = opts.indexOf(zTarget(cur));
@@ -872,7 +965,7 @@
     if (a === 'zsave') {
       var zn = (document.getElementById('zname').value || '').trim(), zc2 = parseInt(document.getElementById('zcnt').value, 10);
       if (!zn) return document.getElementById('zname').focus();
-      var cid = uid(); Z.custom.push({ id: cid, n: zn, t: zc2 > 0 ? zc2 : 33 }); Z.sel = cid; zForm = false; zSave(); return render();
+      var cid = uid(); Z.custom.push({ id: cid, n: zn, t: zc2 > 0 ? zc2 : 33 }); Z.sel = cid; zForm = false; zSave(); screen = 'zikir'; return render();
     }
     if (a === 'qadd') { qForm = true; return render(); }
     if (a === 'qcancel') { qForm = false; return render(); }
@@ -902,7 +995,7 @@
     if (a === 'updcheck') return checkUpdate(true);
     if (a === 'kbloc') return kbLocate();
     if (a === 'mail') {
-      var addr = ['fa.rawyadal', 'gmail.com'].join('@');
+      var addr = 'farid.assamani@gmail.com';
       location.href = 'mailto:' + addr + '?subject=' + encodeURIComponent(u('emelSubjek') + ' v' + APP_VERSION) + '&body=' + encodeURIComponent(u('emelBadan'));
       return;
     }
