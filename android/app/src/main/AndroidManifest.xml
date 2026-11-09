@@ -34,18 +34,13 @@
                 android:resource="@xml/file_paths"></meta-data>
         </provider>
 
-        <receiver android:name=".NextWidget" android:exported="true">
-            <intent-filter>
-                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-            </intent-filter>
-            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_next_info" />
-        </receiver>
 
-        <receiver android:name=".SunatWidget" android:exported="true">
+
+        <receiver android:name=".SeterusnyaWidget" android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
-            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_sunat_info" />
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_seterus_info" />
         </receiver>
 
         <receiver android:name=".WaktuWidget" android:exported="true">
@@ -62,12 +57,6 @@
             <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_zikir_info" />
         </receiver>
 
-        <receiver android:name=".TarikhWidget" android:exported="true">
-            <intent-filter>
-                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-            </intent-filter>
-            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_tarikh_info" />
-        </receiver>
 
         <receiver android:name=".WidgetEventReceiver" android:exported="false">
             <intent-filter>

@@ -35,27 +35,22 @@ final class WidgetUpdater {
             List<WidgetData.Item> items = WidgetData.items(r);
             long now = System.currentTimeMillis();
 
-            int[] ids = ids(ctx, m, NextWidget.class);
-            if (ids.length > 0) m.updateAppWidget(ids, buildNext(ctx, r, items, now));
-            ids = ids(ctx, m, SunatWidget.class);
-            if (ids.length > 0) m.updateAppWidget(ids, buildSunat(ctx, r, items, now));
+            int[] ids = ids(ctx, m, SeterusnyaWidget.class);
+            if (ids.length > 0) m.updateAppWidget(ids, buildSeterus(ctx, r, items, now));
             ids = ids(ctx, m, WaktuWidget.class);
             if (ids.length > 0) {
-                RemoteViews full = buildWaktu(ctx, r, items, now, R.layout.widget_waktu);
-                RemoteViews rv = full;
+                RemoteViews rv = buildWaktu(ctx, r, items, now, R.layout.widget_waktu);
                 if (Build.VERSION.SDK_INT >= 31) {
-                    // satu widget, dua susun atur: nipis (4x1) bila ditarik rendah, penuh (4x2) bila tinggi
+                    // satu widget, dua susun atur: satu baris (4x1), dua baris tiga waktu (4x2)
                     java.util.Map<android.util.SizeF, RemoteViews> map = new java.util.LinkedHashMap<>();
-                    map.put(new android.util.SizeF(250f, 40f), buildWaktu(ctx, r, items, now, R.layout.widget_waktu_compact));
-                    map.put(new android.util.SizeF(250f, 110f), full);
+                    map.put(new android.util.SizeF(250f, 40f), rv);
+                    map.put(new android.util.SizeF(250f, 125f), buildWaktu(ctx, r, items, now, R.layout.widget_waktu_big));
                     rv = new RemoteViews(map);
                 }
                 m.updateAppWidget(ids, rv);
             }
             ids = ids(ctx, m, ZikirWidget.class);
             if (ids.length > 0) m.updateAppWidget(ids, buildZikir(ctx, r));
-            ids = ids(ctx, m, TarikhWidget.class);
-            if (ids.length > 0) m.updateAppWidget(ids, buildTarikh(ctx, r));
 
             schedule(ctx, items, now);
         } catch (Exception ignored) {
@@ -73,41 +68,16 @@ final class WidgetUpdater {
         return PendingIntent.getActivity(ctx, 0, i, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
     }
 
-    private static RemoteViews buildNext(Context ctx, JSONObject r, List<WidgetData.Item> items, long now) {
-        RemoteViews v = new RemoteViews(ctx.getPackageName(), R.layout.widget_next);
-        v.setTextViewText(R.id.lbl, WidgetData.label(r, "seterusnya", "Seterusnya"));
-        WidgetData.Item it = WidgetData.next(items, now, 1);
-        if (it == null) {
-            v.setTextViewText(R.id.name, "-");
-            v.setTextViewText(R.id.time, "");
-            v.setTextViewText(R.id.tinggal, "");
-            v.setViewVisibility(R.id.chron, android.view.View.GONE);
-        } else {
-            v.setTextViewText(R.id.name, it.name);
-            v.setTextViewText(R.id.time, WidgetData.fmt12(r, it.at, true));
-            v.setTextViewText(R.id.tinggal, WidgetData.label(r, "tinggal", "tinggal"));
-            v.setViewVisibility(R.id.chron, android.view.View.VISIBLE);
-            long base = SystemClock.elapsedRealtime() + (it.at - now);
-            if (Build.VERSION.SDK_INT >= 24) v.setChronometerCountDown(R.id.chron, true);
-            v.setChronometer(R.id.chron, base, null, true);
-        }
-        v.setOnClickPendingIntent(R.id.root, openApp(ctx));
-        return v;
-    }
-
-    private static RemoteViews buildSunat(Context ctx, JSONObject r, List<WidgetData.Item> items, long now) {
-        RemoteViews v = new RemoteViews(ctx.getPackageName(), R.layout.widget_sunat);
-        v.setTextViewText(R.id.lbl, WidgetData.label(r, "sunatNext", "Sunat seterusnya"));
-        WidgetData.Item it = WidgetData.next(items, now, 2);
-        if (it == null) {
-            v.setTextViewText(R.id.name, "-");
-            v.setTextViewText(R.id.sub, "");
-            v.setTextViewText(R.id.time, "");
-        } else {
-            v.setTextViewText(R.id.name, it.name);
-            v.setTextViewText(R.id.sub, it.sub);
-            v.setTextViewText(R.id.time, WidgetData.fmt12(r, it.at, true));
-        }
+    private static RemoteViews buildSeterus(Context ctx, JSONObject r, List<WidgetData.Item> items, long now) {
+        RemoteViews v = new RemoteViews(ctx.getPackageName(), R.layout.widget_seterus);
+        v.setTextViewText(R.id.lbl, WidgetData.label(r, "seterusnya", "Seterusnya").toUpperCase());
+        WidgetData.Item f = WidgetData.next(items, now, 1);
+        v.setTextViewText(R.id.name, f == null ? "-" : f.name);
+        v.setTextViewText(R.id.time, f == null ? "" : WidgetData.fmt12(r, f.at, true));
+        v.setTextViewText(R.id.slbl, WidgetData.label(r, "sunatNext", "Sunat seterusnya").toUpperCase());
+        WidgetData.Item s = WidgetData.next(items, now, 2);
+        v.setTextViewText(R.id.sname, s == null ? "-" : s.name);
+        v.setTextViewText(R.id.stime, s == null ? "" : WidgetData.fmt12(r, s.at, true));
         v.setOnClickPendingIntent(R.id.root, openApp(ctx));
         return v;
     }
@@ -178,22 +148,6 @@ final class WidgetUpdater {
         } catch (Exception e) {
             return "";
         }
-    }
-
-    private static RemoteViews buildTarikh(Context ctx, JSONObject r) {
-        RemoteViews v = new RemoteViews(ctx.getPackageName(), R.layout.widget_tarikh);
-        Calendar cal = Calendar.getInstance();
-        String mon = "";
-        try {
-            mon = r.getJSONObject("labels").getJSONArray("mon").getString(cal.get(Calendar.MONTH));
-        } catch (Exception ignored) { }
-        JSONObject d = WidgetData.day(r, WidgetData.ymd(cal));
-        String hijri = d == null ? "" : d.optString("hijri");
-        v.setTextViewText(R.id.dow, dowName(r, cal));
-        v.setTextViewText(R.id.day, String.valueOf(cal.get(Calendar.DAY_OF_MONTH)));
-        v.setTextViewText(R.id.sub, mon + " " + cal.get(Calendar.YEAR) + (hijri.isEmpty() ? "" : " · " + hijri));
-        v.setOnClickPendingIntent(R.id.root, openApp(ctx));
-        return v;
     }
 
     /** Jadualkan kemas kini seterusnya: selepas waktu solat seterusnya atau tengah malam. */
