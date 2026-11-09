@@ -40,7 +40,18 @@ final class WidgetUpdater {
             ids = ids(ctx, m, SunatWidget.class);
             if (ids.length > 0) m.updateAppWidget(ids, buildSunat(ctx, r, items, now));
             ids = ids(ctx, m, WaktuWidget.class);
-            if (ids.length > 0) m.updateAppWidget(ids, buildWaktu(ctx, r, items, now));
+            if (ids.length > 0) {
+                RemoteViews full = buildWaktu(ctx, r, items, now, R.layout.widget_waktu);
+                RemoteViews rv = full;
+                if (Build.VERSION.SDK_INT >= 31) {
+                    // satu widget, dua susun atur: nipis (4x1) bila ditarik rendah, penuh (4x2) bila tinggi
+                    java.util.Map<android.util.SizeF, RemoteViews> map = new java.util.LinkedHashMap<>();
+                    map.put(new android.util.SizeF(250f, 40f), buildWaktu(ctx, r, items, now, R.layout.widget_waktu_compact));
+                    map.put(new android.util.SizeF(250f, 110f), full);
+                    rv = new RemoteViews(map);
+                }
+                m.updateAppWidget(ids, rv);
+            }
             ids = ids(ctx, m, ZikirWidget.class);
             if (ids.length > 0) m.updateAppWidget(ids, buildZikir(ctx, r));
             ids = ids(ctx, m, TarikhWidget.class);
@@ -101,8 +112,8 @@ final class WidgetUpdater {
         return v;
     }
 
-    private static RemoteViews buildWaktu(Context ctx, JSONObject r, List<WidgetData.Item> items, long now) {
-        RemoteViews v = new RemoteViews(ctx.getPackageName(), R.layout.widget_waktu);
+    private static RemoteViews buildWaktu(Context ctx, JSONObject r, List<WidgetData.Item> items, long now, int layout) {
+        RemoteViews v = new RemoteViews(ctx.getPackageName(), layout);
         Calendar cal = Calendar.getInstance();
         String today = WidgetData.ymd(cal);
         JSONObject d = WidgetData.day(r, today);

@@ -2,7 +2,7 @@
 (function () {
   'use strict';
   var L = window.IstiLogic, I18N = window.ISTI_I18N, ZONES = window.ISTI_ZONES, ZPTS = window.ISTI_ZONEPTS || [];
-  var APP_VERSION = '0.6.0';
+  var APP_VERSION = '0.6.1';
   var params = new URLSearchParams(location.search);
   var Cap = window.Capacitor;
   var isNative = !!(Cap && Cap.isNativePlatform && Cap.isNativePlatform());
@@ -567,9 +567,12 @@
   }
   function buzz(p) {
     if (!Z.vibrate) return;
-    var H = isNative && Cap.Plugins ? Cap.Plugins.Haptics : null, dur = Array.isArray(p) ? p.reduce(function (a, b) { return a + b; }, 0) : p;
+    var H = isNative && Cap.Plugins ? Cap.Plugins.Haptics : null, dur = Array.isArray(p) ? 150 : p;
     try {
-      if (H && H.vibrate) { H.vibrate({ duration: Math.max(10, dur) }); return; }
+      if (H && H.vibrate) {
+        H.vibrate({ duration: Math.max(40, dur) }).catch(function () { try { if (navigator.vibrate) navigator.vibrate(p); } catch (e2) { /* abaikan */ } });
+        return;
+      }
       if (navigator.vibrate) navigator.vibrate(p);
     } catch (e) { /* abaikan */ }
   }
@@ -940,12 +943,12 @@
       var n1 = (Z.counts[zi.id] || 0) + 1;
       Z.counts[zi.id] = n1;
       if (grp && n1 >= zt) {
-        buzz([80, 50, 80]);
+        buzz([80, 50, 100]);
         if (Z.step < 2) { Z.step++; toast(u('zSeterusnya').replace('{n}', zFind(ZG[Z.step]).n)); }
         else { Z.gdone = true; toast(u('gSelesai')); }
         zSave(); widgetSync(); return render();
       }
-      zSave(); widgetSync(); buzz(n1 === zt ? [80, 50, 80] : 15);
+      zSave(); widgetSync(); buzz(n1 === zt ? [80, 50, 100] : 60);
       if (!grp && n1 === zt) toast(u('zCapai'));
       return zRefresh();
     }
@@ -955,7 +958,7 @@
       zSave(); widgetSync(); return render();
     }
     if (a === 'ztoday') { var tdd = zToday(); Z.sel = tdd.id; zSave(); return render(); }
-    if (a === 'zvib') { Z.vibrate = !Z.vibrate; zSave(); buzz(30); return render(); }
+    if (a === 'zvib') { Z.vibrate = !Z.vibrate; zSave(); buzz(60); return render(); }
     if (a === 'ztarget') {
       var cur = zCur(), opts = [33, 99, 100], ix = opts.indexOf(zTarget(cur));
       Z.targets[cur.id] = opts[(ix + 1) % opts.length]; zSave(); return render();
