@@ -37,13 +37,4 @@ public class IstiWidgetPlugin extends Plugin {
         o.put("c", p.getInt("zk_c", 0));
         call.resolve(o);
     }
-
-    @PluginMethod
-    public void getOpen(PluginCall call) {
-        SharedPreferences p = WidgetData.prefs(getContext());
-        JSObject o = new JSObject();
-        o.put("o", p.getString("open", ""));
-        p.edit().remove("open").apply();
-        call.resolve(o);
-    }
 }
