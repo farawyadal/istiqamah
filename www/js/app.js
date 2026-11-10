@@ -2,7 +2,7 @@
 (function () {
   'use strict';
   var L = window.IstiLogic, I18N = window.ISTI_I18N, ZONES = window.ISTI_ZONES, ZPTS = window.ISTI_ZONEPTS || [];
-  var APP_VERSION = '0.9.1';
+  var APP_VERSION = '0.9.2';
   var params = new URLSearchParams(location.search);
   var Cap = window.Capacitor;
   var isNative = !!(Cap && Cap.isNativePlatform && Cap.isNativePlatform());
@@ -1023,18 +1023,49 @@
   /* Umrah */
   var UM = Object.assign({ done: {} }, load('isti.umrah', {}));
   function uSave() { save('isti.umrah', UM); }
+  UM.adding = false; UM.tab = UM.tab || 'prep'; UM.p = UM.p || { done: {}, off: {} }; UM.cus = UM.cus || [];
+  function umrahTabs() {
+    return '<div class="seg" style="margin:0 0 12px">' + [['prep', tt('Persediaan', 'Preparation')], ['step', tt('Langkah Umrah', 'Umrah steps')]].map(function (x) {
+      return '<button class="' + (UM.tab === x[0] ? 'on' : '') + '" data-act="utab" data-v="' + x[0] + '" aria-pressed="' + (UM.tab === x[0]) + '">' + x[1] + '</button>';
+    }).join('') + '</div>';
+  }
+  function viewUmrahPrep() {
+    var en = S.lang === 'en', GN = { dok: ['DOKUMEN', 'DOCUMENTS'], kes: ['KESIHATAN', 'HEALTH'], wang: ['WANG', 'MONEY'], pak: ['PAKAIAN DAN BARANG', 'CLOTHING AND ITEMS'], rumah: ['URUSAN DI RUMAH', 'AFFAIRS AT HOME'], cus: ['ITEM SENDIRI', 'MY OWN ITEMS'] };
+    var all = F.prep.map(function (x) { return { g: x[0], id: x[1], t: x[en ? 3 : 2], own: false }; }).concat(UM.cus.map(function (c) { return { g: 'cus', id: c.id, t: c.t, own: true }; }));
+    var act = 0, dn = 0, off = 0;
+    all.forEach(function (x) { if (UM.p.off[x.id]) off++; else { act++; if (UM.p.done[x.id]) dn++; } });
+    var html = '';
+    ['dok', 'kes', 'wang', 'pak', 'rumah', 'cus'].forEach(function (g) {
+      var items = all.filter(function (x) { return x.g === g; });
+      if (!items.length) return;
+      html += '<div class="sech" style="margin-top:14px">' + GN[g][en ? 1 : 0] + '</div><div class="card pgrp">' + items.map(function (x) {
+        var o = !!UM.p.off[x.id], d = !!UM.p.done[x.id];
+        return '<div class="prow' + (o ? ' off' : '') + '">' +
+          (o ? '<span class="pck dis"></span>' : '<button class="pck' + (d ? ' on' : '') + '" data-act="uptick" data-id="' + x.id + '" aria-pressed="' + d + '" aria-label="' + esc(x.t) + '">' + (d ? '✓' : '') + '</button>') +
+          '<span class="ptx">' + esc(x.t) + (x.own ? '<small>' + tt('Sendiri', 'Own') + '</small>' : '') + '</span>' +
+          (x.own ? '<button class="pdel" data-act="pdel" data-id="' + x.id + '" aria-label="' + u('buang') + '">✕</button>' : '') +
+          '<button class="psw' + (o ? '' : ' on') + '" data-act="ptog" data-id="' + x.id + '" aria-pressed="' + (!o) + '" aria-label="' + tt('Aktif', 'Active') + '"><i></i></button></div>';
+      }).join('') + '</div>';
+    });
+    var add = UM.adding
+      ? '<div class="card" style="margin-top:12px"><input id="uadd" class="inp cin" maxlength="80" placeholder="' + tt('Contoh: Hadiah untuk keluarga', 'e.g. Gifts for family') + '"><div style="display:flex;gap:8px;margin-top:10px"><button class="btn" data-act="padd" style="flex:1;margin:0">' + tt('Simpan', 'Save') + '</button><button class="btn ghost" data-act="pcancel" style="flex:1;margin:0">' + tt('Batal', 'Cancel') + '</button></div></div>'
+      : '<button class="btn wide ghost" data-act="pnew" style="margin-top:12px">+ ' + tt('Tambah item sendiri', 'Add your own item') + '</button>';
+    return '<div class="card"><div class="ucount">' + dn + ' / ' + act + '</div><div class="cabs">' + tt('item aktif disiapkan', 'active items done') + (off ? ' · ' + off + ' ' + tt('dimatikan', 'turned off') : '') + '</div><div class="bar"><div style="width:' + (act ? dn / act * 100 : 0) + '%"></div></div></div>' + html + add +
+      '<button class="btn wide ghost" data-act="preset" style="margin-top:8px">' + tt('Pulihkan senarai asal', 'Restore original list') + '</button>' +
+      '<div class="note" style="margin:10px 4px 0">' + tt('Suis hijau = item aktif. Item yang dimatikan tidak dikira dalam kemajuan. Senarai ini panduan umum, sesuaikan dengan keperluan dan arahan agensi anda.', 'Green switch = active item. Items turned off are not counted. This is a general guide; adapt it to your needs and your agency’s instructions.') + '</div>';
+  }
   function viewUmrah() {
     var en = S.lang === 'en', n = 0;
+    if (UM.tab === 'prep') return topbar(u('umrah'), true) + '<main class="scroll">' + umrahTabs() + viewUmrahPrep() + '</main>';
     var rows = F.umrah.map(function (x, i) {
       var d = !!UM.done[i]; if (d) n++;
       var tag = x[4] === 'R' ? tt('Rukun', 'Pillar') : tt('Sunat', 'Sunnah');
       return '<button class="urow' + (d ? ' on' : '') + '" data-act="utick" data-n="' + i + '" aria-pressed="' + d + '"><span class="uc">' + (d ? '✓' : '') + '</span><span class="um"><b>' + (i + 1) + '. ' + esc(x[en ? 1 : 0]) + '</b><span>' + esc(x[en ? 3 : 2]) + '</span></span><span class="utag ' + x[4] + '">' + tag + '</span></button>';
     }).join('');
-    return topbar(u('umrah'), true) + '<main class="scroll"><div class="card"><div class="ucount">' + n + ' / ' + F.umrah.length + '</div><div class="bar"><div style="width:' + (n / F.umrah.length * 100) + '%"></div></div></div>' +
+    return topbar(u('umrah'), true) + '<main class="scroll">' + umrahTabs() + '<div class="card"><div class="ucount">' + n + ' / ' + F.umrah.length + '</div><div class="bar"><div style="width:' + (n / F.umrah.length * 100) + '%"></div></div></div>' +
       '<div class="ulist">' + rows + '</div><button class="btn wide ghost" data-act="ureset" style="margin-top:10px">' + tt('Set semula senarai', 'Reset list') + '</button>' +
       '<div class="note" style="margin:10px 4px 0">' + tt('Senarai ini hanya ringkasan turutan untuk semakan sendiri. Cara dan bacaan sebenar, rujuk nota kursus dan mutawwif anda.', 'This is only a summary of the order for your own checking. For the exact method and recitations, refer to your course notes and mutawwif.') + '</div></main>';
   }
-
 
   /* Ranking peribadi (mata, tahap, streak) */
   var R = Object.assign({ log: {} }, load('isti.rank', {}));
@@ -1256,6 +1287,14 @@
     }
     if (a === 'ptick') { P.done[el.dataset.d] = !P.done[el.dataset.d]; award(P.done[el.dataset.d] ? 20 : -20); pSave(); return render(); }
     if (a === 'utick') { var un = el.dataset.n; UM.done[un] = !UM.done[un]; uSave(); return render(); }
+    if (a === 'utab') { UM.tab = el.dataset.v; uSave(); return render(); }
+    if (a === 'uptick') { var pid = el.dataset.id; UM.p.done[pid] = !UM.p.done[pid]; uSave(); return render(); }
+    if (a === 'ptog') { var pg = el.dataset.id; UM.p.off[pg] = !UM.p.off[pg]; uSave(); return render(); }
+    if (a === 'pnew') { UM.adding = true; render(); var ui = document.getElementById('uadd'); if (ui) ui.focus(); return; }
+    if (a === 'pcancel') { UM.adding = false; return render(); }
+    if (a === 'padd') { var uv = document.getElementById('uadd'), ut = uv ? uv.value.trim() : ''; if (ut) { UM.cus.push({ id: 'c' + Date.now(), t: ut }); } UM.adding = false; uSave(); return render(); }
+    if (a === 'pdel') { var pd = el.dataset.id; UM.cus = UM.cus.filter(function (c) { return c.id !== pd; }); delete UM.p.done[pd]; delete UM.p.off[pd]; uSave(); return render(); }
+    if (a === 'preset') { UM.p = { done: {}, off: {} }; UM.cus = []; uSave(); return render(); }
     if (a === 'ureset') { UM.done = {}; uSave(); return render(); }
     if (a === 'zcount') {
       var grp = Z.sel === 'g_solat', zi = zCur(), zt = zTarget(zi);

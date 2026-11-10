@@ -57,5 +57,22 @@
     ['sed30', 'Sedekah Subuh 30 Hari', 'Fajr Charity, 30 Days', 30],
     ['mas30', '30 Masjid 30 Hari', '30 Mosques in 30 Days', 30]
   ];
-  window.ISTI_FITUR = { hadis: H, umrah: UMR, cab: CAB, pdf: 'https://d1.islamhouse.com/data/en/ih_books/single2/en-hadith-nawawy-sahih.pdf' };
+  var PREP = [
+    ['dok', 'pasport', 'Pasport sah sekurang-kurangnya 6 bulan', 'Passport valid for at least 6 months'],
+    ['dok', 'visa', 'Visa umrah (melalui agensi berlesen)', 'Umrah visa (through a licensed agency)'],
+    ['dok', 'tiket', 'Tiket penerbangan', 'Flight tickets'],
+    ['dok', 'salinan', 'Salinan dokumen penting (kertas dan digital)', 'Copies of key documents (paper and digital)'],
+    ['kes', 'vaksin', 'Vaksin meningitis dan kad vaksin', 'Meningitis vaccine and vaccination card'],
+    ['kes', 'ubat', 'Ubat peribadi dan preskripsi doktor', 'Personal medication and doctor’s prescription'],
+    ['kes', 'insurans', 'Insurans perjalanan', 'Travel insurance'],
+    ['wang', 'riyal', 'Tukar wang riyal', 'Exchange riyals'],
+    ['wang', 'bajet', 'Bajet sedekah dan hadiah', 'Budget for charity and gifts'],
+    ['pak', 'ihram', 'Kain ihram (lelaki) atau pakaian ihram (wanita)', 'Ihram cloth (men) or ihram clothing (women)'],
+    ['pak', 'telekung', 'Telekung dan sejadah ringan', 'Prayer garment and light prayer mat'],
+    ['pak', 'beg', 'Beg sandang kecil dan botol air', 'Small shoulder bag and water bottle'],
+    ['pak', 'sim', 'Kad SIM atau pelan data', 'SIM card or data plan'],
+    ['rumah', 'waris', 'Maklumkan waris dan jiran', 'Inform family and neighbours'],
+    ['rumah', 'hutang', 'Selesaikan hutang dan amanah tertunggak', 'Settle debts and outstanding trusts']
+  ];
+  window.ISTI_FITUR = { prep: PREP, hadis: H, umrah: UMR, cab: CAB, pdf: 'https://d1.islamhouse.com/data/en/ih_books/single2/en-hadith-nawawy-sahih.pdf' };
 })();

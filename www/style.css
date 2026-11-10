@@ -249,3 +249,10 @@ button{font-family:inherit;cursor:pointer}
 .kc.td{border-color:#0E7C66}.kc.ev{background:#0E7C66;border-color:#E3C46F;color:#fff}.kc.ev i{color:#E8F6EF}
 .kleg{display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:#5E6B78;padding:6px 6px 0}.kdot{display:inline-block;width:10px;height:10px;border-radius:5px;background:#0E7C66;border:2px solid #E3C46F;vertical-align:-2px}
 .krow.hl{background:#DDF1E8;border:1.5px solid #0E7C66}
+/* v0.9.2 persediaan umrah */
+.pgrp{padding:0;overflow:hidden}.prow{display:flex;align-items:center;gap:10px;padding:8px 12px;min-height:52px;border-bottom:1px solid var(--line)}.prow:last-child{border-bottom:0}
+.pck{flex:none;width:28px;height:28px;border-radius:14px;border:2px solid #0E7C66;background:#fff;color:#fff;font-weight:700;font-family:inherit;display:flex;align-items:center;justify-content:center;padding:0}.pck.on{background:#0E7C66}.pck.dis{border:2px dashed #B5AE98;background:transparent}
+.ptx{flex:1;min-width:0;font-size:14px;font-weight:600}.ptx small{margin-left:6px;font-size:10px;color:#7A5C12;border:1px solid #E3C46F;border-radius:8px;padding:1px 6px;font-weight:600}
+.prow.off .ptx{text-decoration:line-through;opacity:.55}.prow.off{background:rgba(0,0,0,.02)}
+.psw{flex:none;width:44px;height:26px;border-radius:13px;border:0;background:#C9C2AB;position:relative;padding:0}.psw i{position:absolute;left:3px;top:3px;width:20px;height:20px;border-radius:10px;background:#fff;transition:left .15s}.psw.on{background:#0E7C66}.psw.on i{left:21px}
+.pdel{flex:none;border:0;background:transparent;color:#9A8F6E;font-size:16px;min-width:32px;min-height:44px}
