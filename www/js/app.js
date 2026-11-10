@@ -2,7 +2,7 @@
 (function () {
   'use strict';
   var L = window.IstiLogic, I18N = window.ISTI_I18N, ZONES = window.ISTI_ZONES, ZPTS = window.ISTI_ZONEPTS || [];
-  var APP_VERSION = '0.8.1';
+  var APP_VERSION = '0.8.2';
   var params = new URLSearchParams(location.search);
   var Cap = window.Capacitor;
   var isNative = !!(Cap && Cap.isNativePlatform && Cap.isNativePlatform());
@@ -362,6 +362,7 @@
       '<div class="card"><div class="lbl">' + u('jantina') + '</div>' + seg('male', S.male ? 1 : 0, [[1, u('lelaki')], [0, u('perempuan')]]) + '<div class="note">' + u('jantinaNota') + '</div></div>' +
       '<div class="card"><div class="lbl">' + u('tarawih') + '</div>' + seg('tar', S.tar, [[8, '8'], [10, '10'], [20, '20']]) + '</div>' +
       tahCard() +
+      (WGT ? '<div class="card"><div class="lbl">' + tt('KELEGAPAN WIDGET', 'WIDGET OPACITY') + '</div>' + seg('wopa', S.wopa || 'mid', [['solid', tt('Pekat', 'Solid')], ['mid', tt('Sederhana', 'Medium')], ['glass', tt('Lutsinar', 'Clear')]]) + '<div class="note">' + tt('Latar widget waktu solat. Android tak membenarkan kesan kabur sebenar, jadi ia separa lutsinar.', 'Prayer-times widget background. Android cannot blur widgets, so this is semi-transparent.') + '</div></div>' : '') +
       sech(u('secBahasa')) +
       '<div class="card"><div class="lbl">' + u('bahasa') + '</div>' + seg('lang', S.lang, [['ms', 'Bahasa Melayu'], ['en', 'English']]) + '</div>' +
       (isNative ? sech(u('secNotif')) + perm : '') +
