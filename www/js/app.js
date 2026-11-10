@@ -2,7 +2,7 @@
 (function () {
   'use strict';
   var L = window.IstiLogic, I18N = window.ISTI_I18N, ZONES = window.ISTI_ZONES, ZPTS = window.ISTI_ZONEPTS || [];
-  var APP_VERSION = '0.9.0';
+  var APP_VERSION = '0.9.1';
   var params = new URLSearchParams(location.search);
   var Cap = window.Capacitor;
   var isNative = !!(Cap && Cap.isNativePlatform && Cap.isNativePlatform());
@@ -773,11 +773,11 @@
     for (var i = 0; i < 4; i++) {
       var date = L.addDays(today, i), dm = dayModel(date, adj);
       if (!dm) continue;
-      var tt = dm.t;
+      var pt = dm.t;
       days.push({
         ymd: L.ymd(date),
         hijri: dm.h.d + ' ' + t.ui.bulanH[dm.h.m - 1] + ' ' + dm.h.y,
-        p: { subuh: tt.fajr.slice(0, 5), syuruk: tt.syuruk.slice(0, 5), zohor: tt.dhuhr.slice(0, 5), asar: tt.asr.slice(0, 5), maghrib: tt.maghrib.slice(0, 5), isyak: tt.isha.slice(0, 5) },
+        p: { subuh: pt.fajr.slice(0, 5), syuruk: pt.syuruk.slice(0, 5), zohor: pt.dhuhr.slice(0, 5), asar: pt.asr.slice(0, 5), maghrib: pt.maghrib.slice(0, 5), isyak: pt.isha.slice(0, 5) },
         items: dm.items.map(function (it) {
           var tx = itemText(it.k);
           return { n: tx.n, s: tx.s.split(' · ').slice(1).join(' · '), t: it.t, f: it.fardu ? 1 : 0, b: L.bellOn(S.bells, it.k) ? 1 : 0 };
