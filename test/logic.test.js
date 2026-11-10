@@ -9,7 +9,7 @@ ok('mins/hhmm', () => { assert.strictEqual(L.mins('13:05:00'), 785); assert.stri
 ok('hari biasa', () => {
   const it = L.buildItems(t, { jumaat: false, raya: false, ramadan: false });
   const keys = it.map(x => x.k);
-  assert.deepStrictEqual(keys, ['tahajud','qsubuh','subuh','isyraq','dhuha','qzohor','zohor','bzohor','qasar','asar','maghrib','bmaghrib','awwabin','isyak','bisyak','witir']);
+  assert.deepStrictEqual(keys, ['tahajud','qsubuh','subuh','isyraq','dhuha','dhuhaa','qzohor','zohor','bzohor','qasar','asar','maghrib','bmaghrib','awwabin','isyak','bisyak','witir']);
   assert.strictEqual(it.filter(x => x.fardu).length, 5);
   assert.strictEqual(it.find(x => x.k === 'subuh').t, '05:55');
   assert.strictEqual(it.find(x => x.k === 'isyraq').t, '07:19');

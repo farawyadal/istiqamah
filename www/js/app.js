@@ -2,7 +2,7 @@
 (function () {
   'use strict';
   var L = window.IstiLogic, I18N = window.ISTI_I18N, ZONES = window.ISTI_ZONES, ZPTS = window.ISTI_ZONEPTS || [];
-  var APP_VERSION = '0.8.2';
+  var APP_VERSION = '0.9.0';
   var params = new URLSearchParams(location.search);
   var Cap = window.Capacitor;
   var isNative = !!(Cap && Cap.isNativePlatform && Cap.isNativePlatform());
@@ -155,6 +155,8 @@
   var lastKey = '';
 
   var ICON = {
+    trophy: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0zM7 6H4v2a3 3 0 0 0 3 3M17 6h3v2a3 3 0 0 1-3 3"/></svg>',
+    calnav: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>',
     home: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h5v-6h4v6h5V10"/></svg>',
     grid: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="6" height="6" rx="1.5"/><rect x="14" y="4" width="6" height="6" rx="1.5"/><rect x="4" y="14" width="6" height="6" rx="1.5"/><rect x="14" y="14" width="6" height="6" rx="1.5"/></svg>',
     bell: function (on) { return '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 17V11a6 6 0 0 1 12 0v6l1.5 2h-15z"/><path d="M10 21h4"/>' + (on ? '' : '<path d="M4 4l16 16"/>') + '</svg>'; },
@@ -179,11 +181,11 @@
   };
 
   function nav() {
-    var lagiGroup = ['lagi', 'tetapan', 'tentang', 'qiam', 'kal', 'kiblat', 'hadis', 'khatam', 'cab', 'cabnew', 'pss', 'umr', 'rnk', 'buk'].indexOf(screen) >= 0;
+    var lagiGroup = ['lagi', 'tetapan', 'tentang', 'qiam', 'kiblat', 'hadis', 'khatam', 'pss', 'umr', 'rnk', 'buk'].indexOf(screen) >= 0 && !(retTo && ['kiblat', 'hadis', 'khatam'].indexOf(screen) >= 0);
     function tab(go, on, icon, label) {
       return '<button data-go="' + go + '" class="' + (on ? 'on' : '') + '" aria-current="' + (on ? 'page' : 'false') + '">' + icon + label + '</button>';
     }
-    return '<nav class="nav">' + tab('utama', screen === 'utama', ICON.home, u('utama')) + tab('zikir', screen === 'zikir' || screen === 'zkat', ICON.tasbih, u('zikir')) + tab('lagi', lagiGroup, ICON.grid, u('lagi')) + '</nav>';
+    return '<nav class="nav">' + tab('utama', screen === 'utama' || retTo === 'utama' && ['kiblat', 'hadis', 'khatam'].indexOf(screen) >= 0, ICON.home, u('utama')) + tab('cab', screen === 'cab' || screen === 'cabnew' || retTo === 'cab' && screen === 'khatam', ICON.trophy, u('cabaran')) + tab('zikir', screen === 'zikir' || screen === 'zkat', ICON.tasbih, u('zikir')) + tab('kal', screen === 'kal', ICON.calnav, u('kalNav')) + tab('lagi', lagiGroup, ICON.grid, u('lagi')) + '</nav>';
   }
 
   function dateLine(d, h) {
@@ -285,12 +287,10 @@
     return '<header class="banner plain">' + ICON.star + '<div class="pt">' + u('lagi') + '</div><div class="ps">' + u('lagiSub') + '</div></header>' +
       '<main class="scroll"><div class="grid">' +
       '<button class="tile" data-go="qiam">' + ICON.moon + u('qiam') + '</button>' +
-      '<button class="tile" data-go="kal">' + ICON.cal + u('kal') + '</button>' +
       '<button class="tile" data-go="kiblat">' + ICON.compass + u('kiblat') + '</button>' +
       '<button class="tile" data-go="hadis">' + ICON.doc + u('hadisHari') + '</button>' +
       '<button class="tile" data-go="pss">' + ICON.moon.replace('#7A5C12', '#9A8F6E') + u('puasaSunat') + '</button>' +
       '<button class="tile" data-go="khatam">' + ICON.book + u('khatam') + '</button>' +
-      '<button class="tile" data-go="cab">' + ICON.flag + u('cabaran') + '</button>' +
       '<button class="tile" data-go="umr">' + ICON.doc + u('umrah') + '</button>' +
       '<button class="tile" data-go="rnk">' + ICON.bars + u('ranking') + '</button>' +
       '<button class="tile" data-go="buk">' + ICON.book + u('buku') + '</button>' +
@@ -362,7 +362,7 @@
       '<div class="card"><div class="lbl">' + u('jantina') + '</div>' + seg('male', S.male ? 1 : 0, [[1, u('lelaki')], [0, u('perempuan')]]) + '<div class="note">' + u('jantinaNota') + '</div></div>' +
       '<div class="card"><div class="lbl">' + u('tarawih') + '</div>' + seg('tar', S.tar, [[8, '8'], [10, '10'], [20, '20']]) + '</div>' +
       tahCard() +
-      (WGT ? '<div class="card"><div class="lbl">' + tt('KELEGAPAN WIDGET', 'WIDGET OPACITY') + '</div>' + seg('wopa', S.wopa || 'mid', [['solid', tt('Pekat', 'Solid')], ['mid', tt('Sederhana', 'Medium')], ['glass', tt('Lutsinar', 'Clear')]]) + '<div class="note">' + tt('Latar widget waktu solat. Android tak membenarkan kesan kabur sebenar, jadi ia separa lutsinar.', 'Prayer-times widget background. Android cannot blur widgets, so this is semi-transparent.') + '</div></div>' : '') +
+      '<div class="card"><div class="lbl">' + tt('NOTIFIKASI DHUHA', 'DUHA NOTIFICATION') + '</div>' + seg('dhuhaN', L.bellOn(S.bells, 'dhuhaa') ? 'afdhal' : 'mula', [['mula', tt('Waktu mula', 'Earliest time')], ['afdhal', tt('Waktu afdhal', 'Best time')]]) + '<div class="note">' + tt('Waktu afdhal ialah kira-kira suku hari dari Syuruk hingga Maghrib, ketika matahari terik. Solat Dhuha bila-bila masa antara waktu mula dan sebelum Zohor tetap sah.', 'The best time is about a quarter of the day from sunrise to sunset, when the sun is hot. Duha at any time between its start and before Dhuhr is valid.') + '</div></div>' +
       sech(u('secBahasa')) +
       '<div class="card"><div class="lbl">' + u('bahasa') + '</div>' + seg('lang', S.lang, [['ms', 'Bahasa Melayu'], ['en', 'English']]) + '</div>' +
       (isNative ? sech(u('secNotif')) + perm : '') +
@@ -630,18 +630,47 @@
     }
     return out;
   }
+  var KM = { off: 0 };
+  function hijriMonth(off) {
+    var today = now(), adj = adjustFor(today), h = L.hijriAt(today, adj), start = L.addDays(today, -(h.d - 1)), i, hh;
+    for (i = 0; i < Math.abs(off); i++) {
+      if (off > 0) { start = L.addDays(start, 29); while (L.hijriAt(start, adj).d !== 1) start = L.addDays(start, 1); }
+      else { start = L.addDays(start, -1); hh = L.hijriAt(start, adj); start = L.addDays(start, -(hh.d - 1)); }
+    }
+    var days = [], d = start;
+    for (i = 0; i < 31; i++) {
+      hh = L.hijriAt(d, adj);
+      if (days.length && hh.d === 1) break;
+      days.push({ date: d, h: hh }); d = L.addDays(d, 1);
+    }
+    return days;
+  }
   function viewKal() {
-    var t = T(), ev = calEvents();
+    var t = T(), ev = calEvents(), todayY = L.ymd(now());
     function gline(e) { var d = e.date; return t.ui.hari[d.getDay()] + ', ' + d.getDate() + ' ' + t.ui.bulanM[d.getMonth()] + ' ' + d.getFullYear() + ' (' + t.ui.anggaran + ')'; }
     function days(e) { return e.days === 0 ? t.ui.hariIniShort : t.ui.hariLagi.replace('{n}', e.days); }
-    var hero = ev[0] ? '<section class="hero kh">' + ICON.star.replace('class="deco"', 'class="deco deco2"') + '<div class="hl">' + t.ui.kalHero + '</div><div class="hn">' + t.sambutan[ev[0].k] + '</div><div class="hs">' + ev[0].h.d + ' ' + t.ui.bulanH[ev[0].h.m - 1] + ' ' + ev[0].h.y + ' · ' + gline(ev[0]) + '</div><div class="hline" style="border:0;padding-top:2px;margin-top:4px;min-height:0">' + days(ev[0]) + '</div></section>' : '';
+    var hero = ev[0] ? '<section class="hero kh">' + ICON.star.replace('class="deco"', 'class="deco deco2"') + '<div class="hl">' + t.ui.kalHero + '</div><div class="hn">' + t.sambutan[ev[0].k] + '</div><div class="hs">' + ev[0].h.d + ' ' + t.ui.bulanH[ev[0].h.m - 1] + ' ' + ev[0].h.y + ' · ' + gline(ev[0]) + '</div><div class="hc">' + days(ev[0]) + '</div></section>' : '';
+    var md = hijriMonth(KM.off), f = md[0], l = md[md.length - 1];
+    var mTitle = t.ui.bulanH[f.h.m - 1] + ' ' + f.h.y;
+    var mSub = t.ui.bulanM[f.date.getMonth()] + (f.date.getMonth() !== l.date.getMonth() ? ' – ' + t.ui.bulanM[l.date.getMonth()] : '') + ' ' + l.date.getFullYear();
+    var dn = t.ui.hari.map(function (x) { return '<div class="kwd">' + esc(x.slice(0, 3)) + '</div>'; }).join('');
+    var cells = '', i;
+    for (i = 0; i < f.date.getDay(); i++) cells += '<div></div>';
+    md.forEach(function (x) {
+      var k = L.sambutanOf(x.h), g = x.date.getDate() + (x.h.d === 1 || g1(x) ? ' ' + t.ui.bulanM[x.date.getMonth()].slice(0, 3) : '');
+      var cls = 'kc' + (k ? ' ev' : '') + (L.ymd(x.date) === todayY ? ' td' : '');
+      cells += (k ? '<button class="' + cls + '" data-act="kalev" data-k="' + k + '" aria-label="' + esc(t.sambutan[k]) + '">' : '<div class="' + cls + '">') + '<b>' + x.h.d + '</b><i>' + g + '</i>' + (k ? '</button>' : '</div>');
+    });
+    function g1(x) { return x.date.getDate() === 1; }
+    var mcard = '<div class="card kmc"><div class="kmh"><button class="kmb" data-act="kalm" data-d="-1" aria-label="' + tt('Bulan sebelum', 'Previous month') + '">‹</button><button class="kmt" data-act="kalm" data-d="0"><span>' + mTitle + '</span><small>' + mSub + '</small></button><button class="kmb" data-act="kalm" data-d="1" aria-label="' + tt('Bulan seterusnya', 'Next month') + '">›</button></div>' +
+      '<div class="kgr">' + dn + cells + '</div><div class="kleg"><span><b class="kdot"></b> ' + tt('Sambutan Islam', 'Islamic occasion') + '</span><span>' + tt('Kecil = tarikh Masihi', 'Small = Gregorian date') + '</span></div></div>';
     var rows = ev.map(function (e) {
       var on = sbellOn(e.k), big = !!SBELL_DEF[e.k], name = t.sambutan[e.k];
-      return '<div class="row krow' + (big ? ' raya' : '') + '"><div class="rt kd">' + (e.days === 0 ? t.ui.hariIniShort : e.days + ' ' + (S.lang === 'en' ? 'd' : 'hari')) + '</div><div><div class="rn">' + name + '</div><div class="rs">' + e.h.d + ' ' + t.ui.bulanH[e.h.m - 1] + ' ' + e.h.y + ' · ' + gline(e) + '</div></div>' +
+      return '<div class="row krow' + (big ? ' raya' : '') + '" id="kev-' + e.k + '"><div class="rt kd">' + (e.days === 0 ? t.ui.hariIniShort : e.days + ' ' + (S.lang === 'en' ? 'd' : 'hari')) + '</div><div><div class="rn">' + name + '</div><div class="rs">' + e.h.d + ' ' + t.ui.bulanH[e.h.m - 1] + ' · ' + gline(e) + '</div></div>' +
         '<button class="bell' + (on ? ' on' : '') + '" data-sbell="' + e.k + '" aria-pressed="' + on + '" aria-label="' + t.ui.ingatan + name + '">' + ICON.bell(on) + '</button></div>';
     }).join('');
-    return '<div class="topbar"><button class="back" data-go="lagi" aria-label="' + u('kembali') + '">' + ICON.back + '</button><div class="tt">' + u('kal') + '</div></div>' +
-      '<main class="scroll">' + hero + '<div class="sh" style="margin:14px 4px 8px">' + u('kalAkan') + '</div>' + rows + '<div class="note" style="margin:10px 4px 0">' + u('kalNota') + '</div></main>';
+    return topbar(u('kal'), false) +
+      '<main class="scroll">' + hero + mcard + '<div class="sh" style="margin:14px 4px 8px">' + u('kalAkan') + '</div>' + rows + '<div class="note" style="margin:10px 4px 0">' + u('kalNota') + '</div></main>';
   }
 
   /* ----- Kiblat ----- */
@@ -763,7 +792,7 @@
       subuh: t.items.subuh[0], syuruk: t.ui.syuruk, zohor: t.items.zohor[0], asar: t.items.asar[0], maghrib: t.items.maghrib[0], isyak: t.items.isyak[0]
     };
     var zc = zCur(), tz = zToday(), hi = dayIndex(today) % F.hadis.length, hd = F.hadis[hi], hk = S.lang === 'en' ? 1 : 0;
-    WGT.sync({ data: JSON.stringify({ zone: zoneShort(S.zone), days: days, labels: labels, opa: S.wopa || 'mid', zk: { ar: tz.ar, n: tz.n }, hd: { i: hi + 1, t: hd[hk], s: hd[2 + hk] } }), zid: zc.id, zn: zc.n, zt: zTarget(zc), zc: Z.counts[zc.id] || 0 }).catch(function () { /* abaikan */ });
+    WGT.sync({ data: JSON.stringify({ zone: zoneShort(S.zone), days: days, labels: labels, zk: { ar: tz.ar, n: tz.n }, hd: { i: hi + 1, t: hd[hk], s: hd[2 + hk] } }), zid: zc.id, zn: zc.n, zt: zTarget(zc), zc: Z.counts[zc.id] || 0 }).catch(function () { /* abaikan */ });
   }
   function pullOpen() {
     if (!WGT || !WGT.getOpen) return Promise.resolve();
@@ -837,13 +866,15 @@
     }
   }
 
+  var retTo = null;
   function go(s, push) {
+    if (['kiblat', 'hadis', 'khatam'].indexOf(s) >= 0) retTo = (screen === 'utama' || screen === 'cab') ? screen : null;
     screen = s;
-    if (push && (['zkat', 'hadis', 'khatam', 'cab', 'cabnew', 'pss', 'umr', 'rnk', 'buk'].indexOf(s) >= 0 || s === 'tetapan' || s === 'tentang' || s === 'qiam' || s === 'kal' || s === 'kiblat')) history.pushState({ s: s }, '');
+    if (push && (['zkat', 'hadis', 'khatam', 'cabnew', 'pss', 'umr', 'rnk', 'buk'].indexOf(s) >= 0 || s === 'tetapan' || s === 'tentang' || s === 'qiam' || s === 'kiblat')) history.pushState({ s: s }, '');
     render();
     if (s === 'utama') refreshData(false);
   }
-  window.addEventListener('popstate', function () { if (!firstRun) { screen = screen === 'zkat' ? 'zikir' : screen === 'cabnew' ? 'cab' : 'lagi'; render(); } });
+  window.addEventListener('popstate', function () { if (!firstRun) { screen = screen === 'zkat' ? 'zikir' : screen === 'cabnew' ? 'cab' : (retTo && ['kiblat', 'hadis', 'khatam'].indexOf(screen) >= 0) ? retTo : 'lagi'; retTo = null; render(); } });
 
 
   /* ----- Ciri baharu: Hadis, Khatam, Cabaran, Puasa Sunat, Umrah ----- */
@@ -928,7 +959,10 @@
     var avail = F.cab.filter(function (t) { return !C.list.some(function (c) { return c.k === t[0]; }); }).map(function (t) {
       return '<div class="cabrow"><div><div class="cabn">' + esc(S.lang === 'en' ? t[2] : t[1]) + '</div><div class="cabs">' + t[3] + ' ' + tt('kali', 'times') + '</div></div><button class="btn sm" data-act="cabadd" data-k="' + t[0] + '" style="margin:0">' + tt('Mula', 'Start') + '</button></div>';
     }).join('');
-    return topbar(u('cabaran'), true) + '<main class="scroll"><div class="sech" style="margin-top:4px">' + tt('CABARAN SAYA', 'MY CHALLENGES') + '</div>' + mine +
+    var kup = Math.min(30, K.upTo || 0), kdays = Math.max(1, daysBetween(K.start, today) + 1);
+    var kcard = '<button class="card cabc kcab" data-go="khatam"><div class="cabh"><div><div class="kcl">' + tt('KHATAM QURAN', 'QURAN COMPLETION') + '</div><div class="cabn">' + (kup >= 30 ? tt('Khatam ✓', 'Completed ✓') : tt('Hari ke-', 'Day ') + kdays + ' · ' + kup + ' / 30 ' + tt('juzuk', 'juz')) + '</div></div><span class="kchev">›</span></div>' +
+      '<div class="bar"><div style="width:' + Math.round(kup / 30 * 100) + '%"></div></div><div class="cabs" style="margin-top:6px">' + tt('Klik untuk buka skrin juzuk', 'Tap to open the juz screen') + '</div></button>';
+    return topbar(u('cabaran'), false) + '<main class="scroll"><div class="sech" style="margin-top:4px">' + tt('CABARAN SAYA', 'MY CHALLENGES') + '</div>' + kcard + mine +
       '<button class="btn wide ghost" data-go="cabnew" style="margin:6px 0 4px">+ ' + tt('Cipta cabaran sendiri', 'Create your own challenge') + '</button>' +
       '<div class="sech">' + tt('CABARAN SEDIA ADA', 'READY-MADE CHALLENGES') + '</div><div class="card">' + (avail || '<div class="note" style="margin:0">' + tt('Semua sudah dimulakan.', 'All started.') + '</div>') + '</div>' +
       '<div class="note" style="margin:6px 4px 0">' + tt('Papan kedudukan dalam talian belum ada. Kemajuan disimpan pada telefon ini sahaja.', 'There is no online leaderboard yet. Progress is stored on this phone only.') + '</div></main>';
@@ -1133,7 +1167,11 @@
   root.addEventListener('click', function (e) {
     var el = e.target.closest('[data-go],[data-filter],[data-bell],[data-tar],[data-set],[data-act],[data-zsel],[data-zkadd],[data-zdel],[data-qchk],[data-qdel],[data-sbell]');
     if (!el) return;
-    if (el.dataset.go) return go(el.dataset.go, true);
+    if (el.dataset.go) {
+      var gt = el.dataset.go;
+      if (gt === 'lagi' && retTo && ['kiblat', 'hadis', 'khatam'].indexOf(screen) >= 0) { gt = retTo; retTo = null; return go(gt, false); }
+      return go(gt, true);
+    }
     if (el.dataset.filter) { filter = el.dataset.filter; return render(); }
     if (el.dataset.bell) {
       var k = el.dataset.bell;
@@ -1146,7 +1184,7 @@
       else if (n === 'lang') S.lang = v;
       else if (n === 'tar') S.tar = +v;
       else if (n === 'tahMode') S.tahMode = v;
-      else if (n === 'wopa') { S.wopa = v; persist(); widgetSync(); return render(); }
+      else if (n === 'dhuhaN') { S.bells = S.bells || {}; S.bells.dhuha = v === 'mula' ? 1 : 0; S.bells.dhuhaa = v === 'afdhal' ? 1 : 0; }
       else if (n === 'zoneAuto') {
         S.zoneAuto = v === '1'; persist();
         if (S.zoneAuto && !firstRun) { render(); return autoZone(true); }
@@ -1177,6 +1215,13 @@
       var sk = el.dataset.sbell; S.sbells = S.sbells || {}; S.sbells[sk] = sbellOn(sk) ? 0 : 1; persist(); reschedule(); return render();
     }
     var a = el.dataset.act;
+    if (a === 'kalm') { var dd = +el.dataset.d; KM.off = dd === 0 ? 0 : KM.off + dd; return render(); }
+    if (a === 'kalev') {
+      var ek = el.dataset.k, er = document.getElementById('kev-' + ek);
+      Array.prototype.forEach.call(document.querySelectorAll('.krow.hl'), function (x) { x.classList.remove('hl'); });
+      if (er) { er.classList.add('hl'); er.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
+      return;
+    }
     if (a === 'tozikir') { Z.sel = zToday().id; zSave(); return go('zikir', false); }
     if (a === 'hdopen') { var hi = +el.dataset.n; hdOpen = hdOpen === hi ? -1 : hi; return render(); }
     if (a === 'hdshare') { var hh = F.hadis[+el.dataset.n], k2 = S.lang === 'en' ? 1 : 0; return shareText(hh[k2] + '\n' + hh[2 + k2] + '\n(' + hh[4] + ')\n— Istiqamah'); }

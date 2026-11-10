@@ -52,8 +52,6 @@ final class WidgetUpdater {
                     }
                 }
             }
-            ids = ids(ctx, m, ZikirWidget.class);
-            if (ids.length > 0) m.updateAppWidget(ids, buildZikir(ctx, r));
 
             schedule(ctx, items, now);
         } catch (Exception ignored) {
@@ -169,22 +167,6 @@ final class WidgetUpdater {
         v.setOnClickPendingIntent(R.id.loc, open(ctx, "zone", 1));
         v.setOnClickPendingIntent(R.id.kib, open(ctx, "kiblat", 2));
 
-        return v;
-    }
-
-    private static RemoteViews buildZikir(Context ctx, JSONObject r) {
-        RemoteViews v = new RemoteViews(ctx.getPackageName(), R.layout.widget_zikir);
-        android.content.SharedPreferences p = WidgetData.prefs(ctx);
-        int c = p.getInt("zk_c", 0);
-        int t = p.getInt("zk_t", 33);
-        String n = p.getString("zk_n", "Subhanallah");
-        v.setTextViewText(R.id.lbl, WidgetData.label(r, "zikirTap", "Zikir · klik untuk kira"));
-        v.setTextViewText(R.id.count, String.valueOf(c));
-        v.setTextViewText(R.id.sub, "/ " + t + " " + n);
-        Intent i = new Intent(ctx, ZikirWidget.class);
-        i.setAction(ACTION_ZIKIR);
-        PendingIntent pi = PendingIntent.getBroadcast(ctx, 1, i, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-        v.setOnClickPendingIntent(R.id.root, pi);
         return v;
     }
 

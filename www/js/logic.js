@@ -120,6 +120,7 @@
     add('subuh', fajr, 1);
     add('isyraq', syuruk + 15, 0);
     add('dhuha', dhuha, 0);
+    add('dhuhaa', Math.min(syuruk + Math.round((mins(t.maghrib) - syuruk) / 4), mins(t.dhuhr) - 20), 0);
     if (flags.raya) add('raya', dhuha + 10, 0);
     if (flags.jumaat) {
       add('tahiyat', dhuhr - 8, 0);
@@ -160,7 +161,7 @@
   }
 
   var DEFAULT_BELLS = {
-    tahajud: 1, qsubuh: 1, subuh: 1, dhuha: 1, zohor: 1, qasar: 1, asar: 1, maghrib: 1,
+    tahajud: 1, qsubuh: 1, subuh: 1, dhuha: 0, dhuhaa: 1, zohor: 1, qasar: 1, asar: 1, maghrib: 1,
     awwabin: 1, isyak: 1, witir: 1, jumaat: 1, qjumaat: 1, tahiyat: 1, raya: 1, tarawih: 1
   };
   function bellOn(bells, k) {
