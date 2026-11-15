@@ -2,7 +2,7 @@
 (function () {
   'use strict';
   var L = window.IstiLogic, I18N = window.ISTI_I18N, ZONES = window.ISTI_ZONES, ZPTS = window.ISTI_ZONEPTS || [];
-  var APP_VERSION = '0.9.2';
+  var APP_VERSION = '0.9.3';
   var params = new URLSearchParams(location.search);
   var Cap = window.Capacitor;
   var isNative = !!(Cap && Cap.isNativePlatform && Cap.isNativePlatform());
@@ -283,7 +283,7 @@
   }
 
   function viewLagi() {
-    var soon = [['mas', 'masjid', ICON.mosque], ['azn', 'azan', ICON.speaker], ['zkt', 'zakat', ICON.plus], ['haj', 'haji', ICON.doc]];
+    var soon = [['dua', 'doaQuran', ICON.book], ['mas', 'masjid', ICON.mosque], ['azn', 'azan', ICON.speaker], ['zkt', 'zakat', ICON.plus], ['haj', 'haji', ICON.doc]];
     return '<header class="banner plain">' + ICON.star + '<div class="pt">' + u('lagi') + '</div><div class="ps">' + u('lagiSub') + '</div></header>' +
       '<main class="scroll"><div class="grid">' +
       '<button class="tile" data-go="qiam">' + ICON.moon + u('qiam') + '</button>' +
