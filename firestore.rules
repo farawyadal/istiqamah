@@ -1,0 +1,50 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Hanya akaun admin yang disahkan
+    function isAdmin() {
+      return request.auth != null
+        && request.auth.token.email == 'fa.rawyadal@gmail.com'
+        && request.auth.token.email_verified == true;
+    }
+
+    // Masjid & surau: orang ramai hanya boleh baca yang diluluskan dan hantar cadangan (pending)
+    match /masjid/{id} {
+      allow read: if resource.data.status == 'approved' || isAdmin();
+      allow create: if isAdmin() || (
+        request.resource.data.keys().hasOnly(['n', 't', 'lat', 'lng', 'status', 'ts'])
+        && request.resource.data.n is string
+        && request.resource.data.n.size() >= 3 && request.resource.data.n.size() <= 80
+        && request.resource.data.t in ['masjid', 'surau']
+        && request.resource.data.lat is number
+        && request.resource.data.lat >= 0 && request.resource.data.lat <= 8
+        && request.resource.data.lng is number
+        && request.resource.data.lng >= 99 && request.resource.data.lng <= 120
+        && request.resource.data.status == 'pending'
+        && request.resource.data.ts is number
+      );
+      allow update, delete: if isAdmin();
+    }
+
+    // Cadangan dari app: hantar sahaja, hanya admin boleh baca
+    match /cadangan/{id} {
+      allow create: if isAdmin() || (
+        request.resource.data.keys().hasOnly(['kind', 'msg', 'ts', 'v'])
+        && request.resource.data.kind in ['buku', 'ciri', 'pembetulan']
+        && request.resource.data.msg is string
+        && request.resource.data.msg.size() >= 5 && request.resource.data.msg.size() <= 500
+        && request.resource.data.ts is number
+        && request.resource.data.v is string
+        && request.resource.data.v.size() <= 20
+      );
+      allow read, update, delete: if isAdmin();
+    }
+
+    // Buku pilihan: semua boleh baca, hanya admin boleh tulis
+    match /buku/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+  }
+}

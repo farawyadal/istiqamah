@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="ms">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Istiqamah Admin</title>
+<style>
+:root{--navy:#0A2540;--navy2:#123B63;--green:#0E7C66;--gold:#E3C46F;--gold3:#7A5C12;--cream:#F6F1E4;--card:#FFFDF6;--line:#E2D8BC;--ink:#10243A;--muted:#4A5B6D;--red:#B3261E}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--cream);color:var(--ink);-webkit-font-smoothing:antialiased}
+header{background:var(--navy);color:#F4EFE0;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+header h1{margin:0;font-size:18px;letter-spacing:.2px}header h1 b{color:var(--gold)}
+header .who{font-size:12px;color:#C3D3E4;display:flex;align-items:center;gap:10px}
+main{max-width:860px;margin:0 auto;padding:18px 16px 60px}
+.login{max-width:380px;margin:70px auto;padding:28px 24px;background:var(--card);border:1px solid var(--line);border-radius:20px;text-align:center}
+.login h2{margin:0 0 6px;font-size:20px}.login p{margin:0 0 20px;font-size:13px;color:var(--muted)}
+button,.btn{font:inherit;cursor:pointer}
+.btn{min-height:44px;padding:0 18px;border-radius:12px;border:0;background:var(--green);color:#fff;font-size:14px;font-weight:700}
+.btn.sm{min-height:34px;padding:0 14px;font-size:13px}.btn.gold{background:var(--gold);color:var(--navy)}
+.btn.ghost{background:transparent;border:1px solid #9A8F6E;color:var(--ink)}.btn.red{background:transparent;border:1px solid var(--red);color:var(--red)}
+.btn:disabled{opacity:.5;cursor:default}
+.tabs{display:flex;gap:8px;margin:0 0 16px;flex-wrap:wrap}
+.tab{min-height:40px;padding:0 16px;border-radius:20px;border:1px solid #9A8F6E;background:transparent;color:var(--muted);font-size:14px;font-weight:600}
+.tab.on{background:var(--green);border-color:var(--green);color:#fff}
+.lbl{font-size:12px;font-weight:700;letter-spacing:.05em;color:var(--gold3);margin:18px 2px 8px}
+.card{padding:14px 16px;margin:0 0 10px;background:var(--card);border:1px solid var(--line);border-radius:16px;display:flex;gap:12px;align-items:center;justify-content:space-between}
+.card .t{font-weight:700;font-size:15px}.card .s{font-size:12px;color:var(--muted);margin-top:3px;line-height:1.5;word-break:break-word}
+.card .act{display:flex;gap:8px;flex:none}
+.empty{padding:24px;text-align:center;color:var(--muted);font-size:14px}
+.badge{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.04em;padding:2px 8px;border-radius:10px;background:#DDF1E8;color:var(--green);margin-left:6px;vertical-align:middle}
+.form{padding:16px;background:var(--card);border:1px solid var(--line);border-radius:16px;display:grid;gap:10px;grid-template-columns:1fr 1fr}
+.form .full{grid-column:1/-1}
+.form label{font-size:12px;font-weight:700;color:var(--muted);display:grid;gap:4px}
+.form input,.form textarea,.form select{font:inherit;font-size:14px;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:#fff;color:var(--ink)}
+.form textarea{min-height:80px;resize:vertical}
+.cover{width:44px;height:60px;border-radius:6px;object-fit:cover;background:#E9E2CB;flex:none}
+.msg{margin:10px 0;padding:10px 14px;border-radius:12px;font-size:13px;background:#FBE9C4;color:var(--gold3)}
+.msg.err{background:#FBE0DD;color:var(--red)}
+.row{display:flex;gap:12px;align-items:center;min-width:0}.row>div{min-width:0}
+@media(max-width:560px){.form{grid-template-columns:1fr}.card{flex-direction:column;align-items:stretch}.card .act{justify-content:flex-end}}
+</style>
+</head>
+<body>
+<header><h1>Istiqamah <b>Admin</b></h1><div class="who" id="who"></div></header>
+<main id="app"></main>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import { getFirestore, collection, getDocs, addDoc, setDoc, updateDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+
+const ADMIN = "fa.rawyadal@gmail.com";
+const app = initializeApp({
+  apiKey: "AIzaSyBzYCNcNIB2BZnbOXh3rPygIz0_wU3fYLc",
+  authDomain: "istiqamah-8b89c.firebaseapp.com",
+  projectId: "istiqamah-8b89c",
+  storageBucket: "istiqamah-8b89c.firebasestorage.app",
+  messagingSenderId: "961558058454",
+  appId: "1:961558058454:web:ad789d4927642cb51ac077"
+});
+const auth = getAuth(app), db = getFirestore(app);
+const $ = s => document.querySelector(s), root = $("#app"), who = $("#who");
+const esc = x => String(x ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const fdate = ms => ms ? new Date(ms).toLocaleDateString("ms-MY", { day: "numeric", month: "short", year: "numeric" }) : "";
+const st = { tab: "mas", mas: [], cad: [], buk: [], edit: null, note: "", err: "" };
+
+function loginView(msg) {
+  who.innerHTML = "";
+  root.innerHTML = `<div class="login"><h2>Log masuk admin</h2><p>Hanya akaun Google yang dibenarkan boleh masuk.</p>
+    <button class="btn" id="li">Log masuk dengan Google</button>${msg ? `<div class="msg err" style="margin-top:16px">${esc(msg)}</div>` : ""}</div>`;
+  $("#li").onclick = async () => { try { await signInWithPopup(auth, new GoogleAuthProvider()); } catch (e) { loginView("Log masuk gagal: " + (e.code || e.message)); } };
+}
+
+async function loadAll() {
+  const g = async n => (await getDocs(collection(db, n))).docs.map(d => ({ id: d.id, ...d.data() }));
+  [st.mas, st.cad, st.buk] = await Promise.all([g("masjid"), g("cadangan"), g("buku")]);
+  st.mas.sort((a, b) => (b.ts || 0) - (a.ts || 0)); st.cad.sort((a, b) => (b.ts || 0) - (a.ts || 0)); st.buk.sort((a, b) => (b.ts || 0) - (a.ts || 0));
+}
+
+function masRow(m, pending) {
+  const jenis = m.t === "surau" ? "Surau" : "Masjid";
+  return `<div class="card"><div><div class="t">${esc(m.n)}${pending ? "" : '<span class="badge">DISAHKAN</span>'}</div>
+    <div class="s">${jenis} · <a href="https://www.google.com/maps/search/?api=1&query=${m.lat},${m.lng}" target="_blank" rel="noopener">${(+m.lat).toFixed(4)}, ${(+m.lng).toFixed(4)}</a>${m.ts ? " · Dihantar " + fdate(m.ts) : ""}</div></div>
+    <div class="act">${pending ? `<button class="btn sm" data-a="lulus" data-id="${m.id}">Lulus</button><button class="btn sm red" data-a="tolak" data-id="${m.id}">Tolak</button>` : `<button class="btn sm red" data-a="padam-mas" data-id="${m.id}">Padam</button>`}</div></div>`;
+}
+
+function masView() {
+  const p = st.mas.filter(m => m.status === "pending"), a = st.mas.filter(m => m.status === "approved");
+  return `<div class="lbl">MENUNGGU KELULUSAN (${p.length})</div>${p.map(m => masRow(m, true)).join("") || '<div class="empty">Tiada cadangan baharu.</div>'}
+  <div class="lbl">DILULUSKAN (${a.length})</div>${a.map(m => masRow(m, false)).join("") || '<div class="empty">Belum ada.</div>'}
+  <div class="lbl">TAMBAH TERUS (TERUS DILULUSKAN)</div>
+  <form class="form" id="fmas"><label class="full">Nama<input name="n" required minlength="3" maxlength="80"></label>
+  <label>Jenis<select name="t"><option value="masjid">Masjid</option><option value="surau">Surau</option></select></label>
+  <label>Lokasi (lat, lng dari Google Maps)<input name="ll" required placeholder="4.4713, 101.0436"></label>
+  <div class="full"><button class="btn" type="submit">Tambah</button></div></form>`;
+}
+
+function cadView() {
+  const kn = { buku: "Buku", ciri: "Ciri baharu", pembetulan: "Pembetulan" };
+  return `<div class="lbl">CADANGAN DARI APP (${st.cad.length})</div>` + (st.cad.map(c => `<div class="card"><div><div class="t">${esc(kn[c.kind] || c.kind)}<span class="badge">v${esc(c.v)}</span></div>
+    <div class="s" style="font-size:14px;color:var(--ink);white-space:pre-wrap">${esc(c.msg)}</div><div class="s">${fdate(c.ts)}</div></div>
+    <div class="act"><button class="btn sm ghost" data-a="padam-cad" data-id="${c.id}">Selesai</button></div></div>`).join("") || '<div class="empty">Tiada cadangan.</div>');
+}
+
+function bukView() {
+  const e = st.edit || {};
+  return `<div class="lbl">${st.edit ? "KEMASKINI BUKU" : "TAMBAH BUKU"}</div>
+  <form class="form" id="fbuk"><label class="full">Tajuk<input name="tajuk" required maxlength="120" value="${esc(e.tajuk)}"></label>
+  <label>Penulis<input name="penulis" required maxlength="80" value="${esc(e.penulis)}"></label>
+  <label>Harga (cth RM25)<input name="harga" maxlength="20" value="${esc(e.harga)}"></label>
+  <label class="full">Sinopsis ringkas (ayat sendiri)<textarea name="sinopsis" required maxlength="500">${esc(e.sinopsis)}</textarea></label>
+  <label>Nama kedai<input name="kedai" maxlength="60" value="${esc(e.kedai)}"></label>
+  <label>Pautan beli (https://...)<input name="url" type="url" maxlength="400" value="${esc(e.url)}"></label>
+  <label class="full">Pautan gambar kulit (https://..., elak pautan Google Drive UiTM)<input name="kulit" type="url" maxlength="400" value="${esc(e.kulit)}"></label>
+  <div class="full"><button class="btn" type="submit">${st.edit ? "Simpan" : "Tambah"}</button>${st.edit ? ' <button class="btn ghost" type="button" data-a="batal-buk">Batal</button>' : ""}</div></form>
+  <div class="lbl">SENARAI BUKU (${st.buk.length})</div>` + (st.buk.map(b => `<div class="card"><div class="row">${b.kulit ? `<img class="cover" src="${esc(b.kulit)}" alt="" onerror="this.style.visibility='hidden'">` : '<div class="cover"></div>'}
+    <div><div class="t">${esc(b.tajuk)}</div><div class="s">${esc(b.penulis)}${b.kedai ? " · " + esc(b.kedai) : ""}${b.harga ? " · " + esc(b.harga) : ""}</div></div></div>
+    <div class="act"><button class="btn sm ghost" data-a="edit-buk" data-id="${b.id}">Ubah</button><button class="btn sm red" data-a="padam-buk" data-id="${b.id}">Padam</button></div></div>`).join("") || '<div class="empty">Belum ada buku. Paparan Buku Pilihan dalam app akan kekal "Akan datang" sehingga ada buku.</div>');
+}
+
+function view() {
+  const np = st.mas.filter(m => m.status === "pending").length;
+  const tabs = [["mas", `Masjid & Surau${np ? " (" + np + ")" : ""}`], ["cad", `Cadangan${st.cad.length ? " (" + st.cad.length + ")" : ""}`], ["buk", "Buku"]];
+  who.innerHTML = `<span>${esc(auth.currentUser.email)}</span><button class="btn sm ghost" id="lo" style="color:#F4EFE0;border-color:#9A8F6E">Log keluar</button>`;
+  $("#lo").onclick = () => signOut(auth);
+  root.innerHTML = `<div class="tabs">${tabs.map(t => `<button class="tab${st.tab === t[0] ? " on" : ""}" data-tab="${t[0]}">${esc(t[1])}</button>`).join("")}</div>` +
+    (st.err ? `<div class="msg err">${esc(st.err)}</div>` : "") + (st.note ? `<div class="msg">${esc(st.note)}</div>` : "") +
+    (st.tab === "mas" ? masView() : st.tab === "cad" ? cadView() : bukView());
+  st.note = ""; st.err = "";
+}
+
+async function run(fn, note) {
+  try { await fn(); await loadAll(); st.note = note || ""; } catch (e) { st.err = "Gagal: " + (e.code || e.message); }
+  view();
+}
+
+root.addEventListener("click", e => {
+  const t = e.target.closest("[data-tab],[data-a]"); if (!t) return;
+  if (t.dataset.tab) { st.tab = t.dataset.tab; st.edit = null; return view(); }
+  const a = t.dataset.a, id = t.dataset.id;
+  if (a === "lulus") return run(() => updateDoc(doc(db, "masjid", id), { status: "approved" }), "Diluluskan.");
+  if (a === "tolak" || a === "padam-mas") { if (!confirm("Padam entri ini?")) return; return run(() => deleteDoc(doc(db, "masjid", id)), "Dipadam."); }
+  if (a === "padam-cad") return run(() => deleteDoc(doc(db, "cadangan", id)), "Ditanda selesai.");
+  if (a === "edit-buk") { st.edit = st.buk.find(b => b.id === id); return view(); }
+  if (a === "batal-buk") { st.edit = null; return view(); }
+  if (a === "padam-buk") { if (!confirm("Padam buku ini?")) return; return run(() => deleteDoc(doc(db, "buku", id)), "Buku dipadam."); }
+});
+
+root.addEventListener("submit", e => {
+  e.preventDefault();
+  const f = Object.fromEntries(new FormData(e.target));
+  if (e.target.id === "fmas") {
+    const m = f.ll.match(/(-?\d+(?:\.\d+)?)\s*[, ]\s*(-?\d+(?:\.\d+)?)/);
+    if (!m) { st.err = "Format lokasi tidak sah. Guna: 4.4713, 101.0436"; return view(); }
+    return run(() => addDoc(collection(db, "masjid"), { n: f.n.trim(), t: f.t, lat: +m[1], lng: +m[2], status: "approved", ts: Date.now() }), "Ditambah.");
+  }
+  if (e.target.id === "fbuk") {
+    const d = { tajuk: f.tajuk.trim(), penulis: f.penulis.trim(), sinopsis: f.sinopsis.trim(), kedai: f.kedai.trim(), harga: f.harga.trim(), url: f.url.trim(), kulit: f.kulit.trim(), ts: st.edit?.ts || Date.now() };
+    const id = st.edit?.id; st.edit = null;
+    return run(() => id ? setDoc(doc(db, "buku", id), d) : addDoc(collection(db, "buku"), d), id ? "Dikemas kini." : "Buku ditambah.");
+  }
+});
+
+onAuthStateChanged(auth, async u => {
+  if (!u) return loginView();
+  if (u.email !== ADMIN) { await signOut(auth); return loginView("Akaun ini tiada kebenaran admin."); }
+  root.innerHTML = '<div class="empty">Memuatkan…</div>';
+  try { await loadAll(); } catch (e) { st.err = "Tidak dapat baca data: " + (e.code || e.message); }
+  view();
+});
+</script>
+</body>
+</html>
