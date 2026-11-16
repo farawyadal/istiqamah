@@ -2,7 +2,7 @@
 (function () {
   'use strict';
   var L = window.IstiLogic, I18N = window.ISTI_I18N, ZONES = window.ISTI_ZONES, ZPTS = window.ISTI_ZONEPTS || [];
-  var APP_VERSION = '0.10.1';
+  var APP_VERSION = '0.10.2';
   var params = new URLSearchParams(location.search);
   var Cap = window.Capacitor;
   var isNative = !!(Cap && Cap.isNativePlatform && Cap.isNativePlatform());
@@ -181,11 +181,11 @@
   };
 
   function nav() {
-    var lagiGroup = ['lagi', 'tetapan', 'tentang', 'qiam', 'kiblat', 'hadis', 'khatam', 'pss', 'umr', 'rnk', 'buk', 'bkd', 'mas', 'cdg'].indexOf(screen) >= 0 && !(retTo && ['kiblat', 'hadis', 'khatam'].indexOf(screen) >= 0);
+    var lagiGroup = ['lagi', 'tetapan', 'tentang', 'qiam', 'kiblat', 'hadis', 'khatam', 'pss', 'umr', 'rnk', 'buk', 'bkd', 'mas', 'cdg'].indexOf(screen) >= 0 && !(retTo && ['kiblat', 'hadis', 'khatam', 'rnk'].indexOf(screen) >= 0);
     function tab(go, on, icon, label) {
       return '<button data-go="' + go + '" class="' + (on ? 'on' : '') + '" aria-current="' + (on ? 'page' : 'false') + '">' + icon + label + '</button>';
     }
-    return '<nav class="nav">' + tab('utama', screen === 'utama' || retTo === 'utama' && ['kiblat', 'hadis', 'khatam'].indexOf(screen) >= 0, ICON.home, u('utama')) + tab('cab', screen === 'cab' || screen === 'cabnew' || retTo === 'cab' && screen === 'khatam', ICON.trophy, u('cabaran')) + tab('zikir', screen === 'zikir' || screen === 'zkat', ICON.tasbih, u('zikir')) + tab('kal', screen === 'kal', ICON.calnav, u('kalNav')) + tab('lagi', lagiGroup, ICON.grid, u('lagi')) + '</nav>';
+    return '<nav class="nav">' + tab('utama', screen === 'utama' || retTo === 'utama' && ['kiblat', 'hadis', 'khatam', 'rnk'].indexOf(screen) >= 0, ICON.home, u('utama')) + tab('cab', screen === 'cab' || screen === 'cabnew' || retTo === 'cab' && (screen === 'khatam' || screen === 'rnk'), ICON.trophy, u('cabaran')) + tab('zikir', screen === 'zikir' || screen === 'zkat', ICON.tasbih, u('zikir')) + tab('kal', screen === 'kal', ICON.calnav, u('kalNav')) + tab('lagi', lagiGroup, ICON.grid, u('lagi')) + '</nav>';
   }
 
   function dateLine(d, h) {
@@ -872,7 +872,7 @@
 
   var retTo = null;
   function go(s, push) {
-    if (['kiblat', 'hadis', 'khatam'].indexOf(s) >= 0) retTo = (screen === 'utama' || screen === 'cab') ? screen : null;
+    if (['kiblat', 'hadis', 'khatam', 'rnk'].indexOf(s) >= 0) retTo = (screen === 'utama' || screen === 'cab') ? screen : null;
     screen = s;
     if (push && (['zkat', 'hadis', 'khatam', 'cabnew', 'pss', 'umr', 'rnk', 'buk', 'bkd', 'mas', 'cdg'].indexOf(s) >= 0 || s === 'tetapan' || s === 'tentang' || s === 'qiam' || s === 'kiblat')) history.pushState({ s: s }, '');
     render();
@@ -880,7 +880,7 @@
     if (s === 'mas') masLoad(false);
     if (s === 'buk') bukLoad();
   }
-  window.addEventListener('popstate', function () { if (!firstRun) { screen = screen === 'zkat' ? 'zikir' : screen === 'bkd' ? 'buk' : screen === 'cdg' ? CD.from : screen === 'buk' ? 'lagi' : screen === 'cabnew' ? 'cab' : (retTo && ['kiblat', 'hadis', 'khatam'].indexOf(screen) >= 0) ? retTo : 'lagi'; retTo = null; render(); } });
+  window.addEventListener('popstate', function () { if (!firstRun) { screen = screen === 'zkat' ? 'zikir' : screen === 'bkd' ? 'buk' : screen === 'cdg' ? CD.from : screen === 'buk' ? 'lagi' : screen === 'cabnew' ? 'cab' : (retTo && ['kiblat', 'hadis', 'khatam', 'rnk'].indexOf(screen) >= 0) ? retTo : 'lagi'; retTo = null; render(); } });
 
 
   /* ----- Ciri baharu: Hadis, Khatam, Cabaran, Puasa Sunat, Umrah ----- */
@@ -954,12 +954,13 @@
     var today = L.ymd(now());
     var mine = C.list.map(function (c) {
       var n = c.done.length, tg = c.target, ticked = c.done.indexOf(today) >= 0, fin = tg > 0 && n >= tg, day = Math.max(1, daysBetween(c.start, today) + 1);
-      var prog = tg > 0 ? n + ' / ' + tg : n + ' ' + tt('kali', 'times');
+      var prog = tg > 0 ? n + ' / ' + tg : n + ' ' + tt('kali', 'times'), jumWait = c.k === 'jum4' && !ticked && now().getDay() !== 5;
       var sub = tt('Hari ke-', 'Day ') + day + ' · ' + tt('mula ', 'started ') + ymdLabel(c.start);
       return '<div class="card cabc"><div class="cabh"><div><div class="cabn">' + esc(cabName(c)) + '</div><div class="cabs">' + sub + '</div></div><button class="cabx" data-act="cabdel" data-id="' + c.id + '" aria-label="' + u('buang') + '">✕</button></div>' +
         '<div class="cabp"><b>' + prog + '</b>' + (fin ? '<span class="cabok">' + tt('Selesai ✓', 'Done ✓') + '</span>' : '') + '</div>' +
         (tg > 0 ? '<div class="bar"><div style="width:' + Math.min(100, n / tg * 100) + '%"></div></div>' : '') +
-        '<button class="btn wide' + (ticked ? ' ghost' : '') + '" data-act="cabtick" data-id="' + c.id + '" style="margin-top:10px">' + (ticked ? tt('✓ Hari ini sudah ditanda (klik untuk batal)', '✓ Done today (tap to undo)') : tt('Tanda siap hari ini', 'Mark today done')) + '</button>' +
+        (jumWait ? '<button class="btn wide dis" data-act="cabwait" style="margin-top:10px" aria-disabled="true">' + tt('Tanda siap hari ini', 'Mark today done') + '</button><div class="note" style="text-align:center">' + tt('Boleh ditanda pada hari Jumaat sahaja', 'Can only be marked on Friday') + '</div>' :
+        '<button class="btn wide' + (ticked ? ' ghost' : '') + '" data-act="cabtick" data-id="' + c.id + '" style="margin-top:10px">' + (ticked ? tt('✓ Hari ini sudah ditanda (klik untuk batal)', '✓ Done today (tap to undo)') : tt('Tanda siap hari ini', 'Mark today done')) + '</button>') +
         '<button class="cabshare" data-act="cabshare" data-id="' + c.id + '">' + tt('Kongsi', 'Share') + '</button></div>';
     }).join('') || '<div class="note" style="margin:0 4px 6px">' + tt('Belum ada cabaran. Pilih satu di bawah atau cipta sendiri.', 'No challenges yet. Pick one below or create your own.') + '</div>';
     var avail = F.cab.filter(function (t) { return !C.list.some(function (c) { return c.k === t[0]; }); }).map(function (t) {
@@ -968,7 +969,8 @@
     var kup = Math.min(30, K.upTo || 0), kdays = Math.max(1, daysBetween(K.start, today) + 1);
     var kcard = '<button class="card cabc kcab" data-go="khatam"><div class="cabh"><div><div class="kcl">' + tt('KHATAM QURAN', 'QURAN COMPLETION') + '</div><div class="cabn">' + (kup >= 30 ? tt('Khatam ✓', 'Completed ✓') : tt('Hari ke-', 'Day ') + kdays + ' · ' + kup + ' / 30 ' + tt('juzuk', 'juz')) + '</div></div><span class="kchev">›</span></div>' +
       '<div class="bar"><div style="width:' + Math.round(kup / 30 * 100) + '%"></div></div><div class="cabs" style="margin-top:6px">' + tt('Klik untuk buka skrin juzuk', 'Tap to open the juz screen') + '</div></button>';
-    return topbar(u('cabaran'), false) + '<main class="scroll"><div class="sech" style="margin-top:4px">' + tt('CABARAN SAYA', 'MY CHALLENGES') + '</div>' + kcard + mine +
+    var ri = rankInfo(), rcard = '<button class="card rcab" data-go="rnk"><span class="rcs">★</span><span class="rci"><span class="rcl">' + tt('RANKING SAYA', 'MY RANKING') + '</span><span class="rcv"><b>' + ri.tot.toLocaleString() + '</b> ' + tt('mata', 'points') + ' · ' + LVN[ri.lv][S.lang === 'en' ? 1 : 0] + '</span></span><span class="brx">›</span></button>';
+    return topbar(u('cabaran'), false) + '<main class="scroll">' + rcard + '<div class="sech" style="margin-top:4px">' + tt('CABARAN SAYA', 'MY CHALLENGES') + '</div>' + kcard + mine +
       '<button class="btn wide ghost" data-go="cabnew" style="margin:6px 0 4px">+ ' + tt('Cipta cabaran sendiri', 'Create your own challenge') + '</button>' +
       '<div class="sech">' + tt('CABARAN SEDIA ADA', 'READY-MADE CHALLENGES') + '</div><div class="card">' + (avail || '<div class="note" style="margin:0">' + tt('Semua sudah dimulakan.', 'All started.') + '</div>') + '</div>' +
       '<div class="note" style="margin:6px 4px 0">' + tt('Papan kedudukan dalam talian belum ada. Kemajuan disimpan pada telefon ini sahaja.', 'There is no online leaderboard yet. Progress is stored on this phone only.') + '</div></main>';
@@ -1318,7 +1320,7 @@
     if (!el) return;
     if (el.dataset.go) {
       var gt = el.dataset.go;
-      if (gt === 'lagi' && retTo && ['kiblat', 'hadis', 'khatam'].indexOf(screen) >= 0) { gt = retTo; retTo = null; return go(gt, false); }
+      if (gt === 'lagi' && retTo && ['kiblat', 'hadis', 'khatam', 'rnk'].indexOf(screen) >= 0) { gt = retTo; retTo = null; return go(gt, false); }
       return go(gt, true);
     }
     if (el.dataset.filter) { filter = el.dataset.filter; return render(); }
@@ -1418,9 +1420,11 @@
     }
     if (a === 'cabtick') {
       var cc = C.list.filter(function (x) { return x.id === el.dataset.id; })[0], td = L.ymd(now());
+      if (cc && cc.k === 'jum4' && cc.done.indexOf(td) < 0 && now().getDay() !== 5) return toast(tt('Boleh ditanda pada hari Jumaat sahaja', 'Can only be marked on Friday'));
       if (cc) { var ix = cc.done.indexOf(td); if (ix >= 0) { cc.done.splice(ix, 1); award(-10); } else { cc.done.push(td); award(10); if (cc.target > 0 && cc.done.length === cc.target) { award(50); } if (cc.target > 0 && cc.done.length === cc.target) toast(tt('Alhamdulillah, cabaran selesai!', 'Alhamdulillah, challenge complete!')); } cSave(); }
       return render();
     }
+    if (a === 'cabwait') return toast(tt('Boleh ditanda pada hari Jumaat sahaja', 'Can only be marked on Friday'));
     if (a === 'cabdel') { C.list = C.list.filter(function (x) { return x.id !== el.dataset.id; }); cSave(); return render(); }
     if (a === 'cabshare') {
       var cs = C.list.filter(function (x) { return x.id === el.dataset.id; })[0];

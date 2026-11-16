@@ -273,3 +273,7 @@ button{font-family:inherit;cursor:pointer}
 .bdh{display:flex;gap:16px;align-items:flex-start;padding-top:6px}.bdc{flex:none;width:110px;height:154px;border-radius:10px;object-fit:cover;background:#E9E2CB}
 .bdt{font-size:19px;font-weight:700;line-height:1.25}.bda{font-size:13px;font-weight:600;color:var(--gold3);margin-top:6px}
 .bds{font-size:14px;line-height:1.6;margin-top:6px;white-space:pre-wrap}.bdb{display:flex;align-items:center;justify-content:center;text-decoration:none;margin-top:22px}
+.rcab{display:flex;align-items:center;gap:12px;width:100%;margin:4px 0 6px;text-align:left;font:inherit;color:var(--ink)}
+.rcs{flex:none;width:36px;height:36px;border-radius:18px;background:var(--navy);color:var(--gold);display:flex;align-items:center;justify-content:center;font-size:18px}
+.rci{flex:1;display:flex;flex-direction:column;gap:2px}.rcl{font-size:11px;font-weight:700;letter-spacing:.08em;color:var(--gold3)}.rcv{font-size:14px;color:var(--muted)}.rcv b{font-size:18px;color:var(--ink)}
+.btn.dis{background:#CFC8B3;color:#6F7885;box-shadow:none}

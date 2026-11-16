@@ -4,29 +4,43 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#0A2540">
-<title>Istiqamah · Muat turun</title>
-<meta name="description" content="Istiqamah: waktu solat fardu dan sunat, zikir, kalendar Hijrah, kiblat dan cabaran ibadah. Muat turun APK Android percuma.">
+<title>Istiqamah · Waktu solat, zikir dan cabaran ibadah</title>
+<meta name="description" content="Istiqamah: waktu solat fardu dan sunat, zikir, kalendar Hijrah, kiblat dan cabaran ibadah. Percuma, tiada iklan, tiada akaun. Muat turun APK Android.">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Istiqamah · Muat turun">
-<meta property="og:description" content="Waktu solat fardu dan sunat harian ikut zon JAKIM. Percuma, tiada iklan, tiada akaun.">
+<meta property="og:title" content="Istiqamah · Waktu solat, zikir dan cabaran ibadah">
+<meta property="og:description" content="Waktu solat fardu dan sunat, zikir, kalendar Hijrah dan cabaran ibadah. Percuma, tiada iklan, tiada akaun.">
 <meta property="og:image" content="https://farawyadal.github.io/istiqamah/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:url" content="https://farawyadal.github.io/istiqamah/">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/png" href="logo.png">
 <style>
-:root{--navy:#0A2540;--green:#0E7C66;--gold:#E3C46F;--cream:#F6F1E4;--card:#FBF7EA;--line:#E2D8BC;--ink:#10243A;--muted:#5E6B78}
+:root{--navy:#0A2540;--green:#0E7C66;--gold:#E3C46F;--gold3:#7A5C12;--cream:#F6F1E4;--card:#FBF7EA;--line:#E2D8BC;--ink:#10243A;--muted:#5E6B78}
 *{box-sizing:border-box}html,body{margin:0}
 body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--cream);color:var(--ink);line-height:1.55}
-.wrap{max-width:560px;margin:0 auto}
-header{background:var(--navy);color:#F4EFE0;text-align:center;padding:34px 22px 28px}
-.logo{width:72px;height:72px}
-h1{font-size:30px;margin:10px 0 4px}
-.tag{font-size:14px;color:#B9CCE0;margin:0 auto;max-width:34em}
+.wrap{max-width:600px;margin:0 auto}
+header{background:var(--navy);color:#F4EFE0;text-align:center;padding:28px 22px 0;overflow:hidden}
+.logo{width:76px;height:76px;border-radius:18px}
+h1{font-size:32px;margin:10px 0 6px}
+.tag{font-size:15px;color:#B9CCE0;margin:0 auto;max-width:30em}
 .btn{display:inline-block;margin-top:20px;background:var(--gold);color:var(--navy);font-weight:700;font-size:16px;padding:14px 28px;border-radius:28px;text-decoration:none}
 .meta{font-size:12px;color:#9DB6CF;margin-top:10px;min-height:1.2em}
-.lang{margin-top:14px;display:flex;justify-content:center;gap:8px}
+.lang{position:absolute;top:14px;right:16px;display:flex;gap:6px}
 .lang button{font:inherit;font-size:12px;padding:5px 12px;border-radius:14px;border:1px solid #2B5681;background:transparent;color:#9DB6CF;cursor:pointer}
 .lang button.on{background:var(--gold);color:var(--navy);font-weight:700;border-color:var(--gold)}
+.hero{position:relative}
+.shotw{height:320px;overflow:hidden;margin-top:26px}.shot{display:block;margin:0 auto;width:210px;height:auto;border-radius:30px 30px 0 0;border:6px solid #11161C;border-bottom:0}
+.pills{display:flex;gap:8px;padding:20px 22px 0}.pills div{flex:1;text-align:center;padding:10px 4px;border-radius:14px;background:var(--card);border:1px solid var(--line);font-size:12px;font-weight:700}
 main{padding:4px 22px 30px}
-h2{font-size:12px;letter-spacing:.08em;color:#7A5C12;margin:24px 0 10px}
+h2{font-size:12px;letter-spacing:.08em;color:var(--gold3);margin:26px 0 10px}
 p{margin:0;font-size:14px}
+.ft{display:flex;gap:18px;align-items:center;margin:28px 0}.ft.rev{flex-direction:row-reverse}
+.ft img{flex:none;width:44%;max-width:230px;height:auto;border-radius:22px;border:5px solid #11161C;box-shadow:0 10px 26px rgba(10,37,64,.28)}
+.tg{font-size:11px;font-weight:700;letter-spacing:.08em;color:var(--gold3)}
+.ft h3{font-size:19px;line-height:1.25;margin:6px 0 8px}.ft p{color:var(--muted);font-size:13px;line-height:1.6}
+.cta2{text-align:center;margin:8px 0 6px}
+.note{margin-top:18px;padding:12px 14px;border-radius:12px;background:#FFF3C9;font-size:12px;color:#6B4E00;line-height:1.5}
 .step{display:flex;gap:12px;margin-bottom:12px}
 .n{flex:none;width:30px;height:30px;border-radius:15px;background:var(--green);color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center}
 .step b{display:block;font-size:14px}.step span{font-size:13px;color:var(--muted)}
@@ -41,18 +55,19 @@ body.ms [data-l=en],body.en [data-l=ms]{display:none!important}
 </head>
 <body class="ms">
 <div class="wrap">
-<header>
-<svg class="logo" viewBox="0 0 100 100" role="img" aria-label="Istiqamah"><rect width="100" height="100" rx="20" fill="#0A2540" stroke="#1C4268"/><rect x="22" y="22" width="56" height="56" fill="none" stroke="#E3C46F" stroke-width="2.4"/><rect x="22" y="22" width="56" height="56" fill="none" stroke="#E3C46F" stroke-width="2.4" transform="rotate(45 50 50)"/><path d="M50 34v32" stroke="#E3C46F" stroke-width="4" stroke-linecap="round"/></svg>
-<h1>Istiqamah</h1>
-<p class="tag"><span data-l="ms">Waktu solat fardu dan sunat, zikir, kalendar Hijrah, kiblat dan cabaran ibadah dalam satu app</span><span data-l="en">Fard and sunnah prayer times, dhikr, Hijri calendar, qibla and worship challenges in one app</span></p>
-<a class="btn" id="dl" href="https://github.com/farawyadal/istiqamah/releases/latest"><span data-l="ms">Muat turun APK</span><span data-l="en">Download APK</span></a>
-<div class="meta" id="meta"></div>
+<header class="hero">
 <div class="lang"><button data-set="ms" class="on">BM</button><button data-set="en">EN</button></div>
+<img class="logo" src="logo.png" alt="Istiqamah">
+<h1>Istiqamah</h1>
+<p class="tag"><span data-l="ms">Waktu solat fardu dan sunat, zikir, kalendar Hijrah dan cabaran ibadah dalam satu app. Ringkas dan tenang.</span><span data-l="en">Fard and sunnah prayer times, dhikr, Hijri calendar and worship challenges in one app. Simple and calm.</span></p>
+<a class="btn" id="dl" href="https://github.com/farawyadal/istiqamah/releases/latest"><span data-l="ms">Muat turun percuma (Android)</span><span data-l="en">Free download (Android)</span></a>
+<div class="meta" id="meta"></div>
+<div class="shotw"><img class="shot" src="img/ss_utama.jpg" alt="Skrin Utama Istiqamah" width="540" height="1172"></div>
 </header>
+<div class="pills"><div><span data-l="ms">Percuma</span><span data-l="en">Free</span></div><div><span data-l="ms">Tiada iklan</span><span data-l="en">No ads</span></div><div><span data-l="ms">Tiada akaun</span><span data-l="en">No account</span></div></div>
 <main>
-<h2><span data-l="ms">APA ADA DALAM APP</span><span data-l="en">WHAT'S INSIDE</span></h2>
-<p><span data-l="ms">Waktu solat fardu ikut zon JAKIM, senarai solat sunat dengan notifikasi · Zikir dan tasbih · Kalendar Hijrah dan sambutan · Kiblat · Cabaran, Khatam Quran dan Umrah · Widget skrin utama</span><span data-l="en">Fard prayer times by JAKIM zone, sunnah prayer list with notifications · Dhikr and tasbih · Hijri calendar and occasions · Qibla · Challenges, Quran completion and Umrah · Home screen widget</span></p>
-
+<section class="ft"><img src="img/ss_utama.jpg" alt="" loading="lazy" width="540" height="1172"><div><div class="tg"><span data-l="ms">WAKTU SOLAT</span><span data-l="en">PRAYER TIMES</span></div><h3><span data-l="ms">Fardu dan sunat dalam satu senarai</span><span data-l="en">Fard and sunnah in one list</span></h3><p><span data-l="ms">Waktu ikut zon JAKIM, bertukar ikut lokasi anda. Notifikasi ikut pilihan, termasuk Dhuha, Tahajud dan Qiamullail.</span><span data-l="en">Times follow the JAKIM zone and change with your location. Choose your notifications, including Duha, Tahajjud and Qiyam al-Layl.</span></p></div></section><section class="ft rev"><img src="img/ss_kalendar.jpg" alt="" loading="lazy" width="540" height="1172"><div><div class="tg"><span data-l="ms">KALENDAR HIJRAH</span><span data-l="en">HIJRI CALENDAR</span></div><h3><span data-l="ms">Tarikh Hijrah sebagai utama</span><span data-l="en">Hijri dates first</span></h3><p><span data-l="ms">Bulan penuh dengan tanda sambutan Islam. Klik satu tarikh untuk terus ke sambutan itu.</span><span data-l="en">A full month with Islamic occasions marked. Tap a date to jump to that occasion.</span></p></div></section><section class="ft"><img src="img/ss_zikir.jpg" alt="" loading="lazy" width="540" height="1172"><div><div class="tg"><span data-l="ms">ZIKIR</span><span data-l="en">DHIKR</span></div><h3><span data-l="ms">Kaunter dan tasbih selepas solat</span><span data-l="en">Counter and post-prayer tasbih</span></h3><p><span data-l="ms">Pilih zikir harian, kira dengan satu klik dan terus ke langkah seterusnya.</span><span data-l="en">Pick your daily dhikr, count with one tap and move on to the next step automatically.</span></p></div></section><section class="ft rev"><img src="img/ss_cabaran.jpg" alt="" loading="lazy" width="540" height="1172"><div><div class="tg"><span data-l="ms">CABARAN</span><span data-l="en">CHALLENGES</span></div><h3><span data-l="ms">Istiqamah dengan sasaran harian</span><span data-l="en">Stay steadfast with daily goals</span></h3><p><span data-l="ms">Cabaran, Khatam Quran dan mata ranking peribadi. Semua data kekal pada telefon anda.</span><span data-l="en">Challenges, Quran completion and a personal ranking. All data stays on your phone.</span></p></div></section><section class="ft"><img src="img/ss_masjid.jpg" alt="" loading="lazy" width="540" height="1172"><div><div class="tg"><span data-l="ms">MASJID DAN SURAU</span><span data-l="en">MOSQUES AND SURAU</span></div><h3><span data-l="ms">Cari yang berdekatan</span><span data-l="en">Find the ones nearby</span></h3><p><span data-l="ms">Senarai ikut lokasi, kegemaran dan cadangan tambahan daripada pengguna.</span><span data-l="en">A list by location, favourites, and additions suggested by users.</span></p></div></section><section class="ft rev"><img src="img/ss_umrah.jpg" alt="" loading="lazy" width="540" height="1172"><div><div class="tg"><span data-l="ms">UMRAH</span><span data-l="en">UMRAH</span></div><h3><span data-l="ms">Senarai persediaan dan langkah</span><span data-l="en">Preparation list and steps</span></h3><p><span data-l="ms">Senarai semak yang boleh disesuaikan, serta panduan langkah umrah.</span><span data-l="en">A customisable checklist and a guide to the steps of umrah.</span></p></div></section>
+<div class="cta2"><a class="btn" id="dl2" href="https://github.com/farawyadal/istiqamah/releases/latest"><span data-l="ms">Muat turun percuma (Android)</span><span data-l="en">Free download (Android)</span></a></div>
 <h2><span data-l="ms">CARA PASANG (1 MINIT)</span><span data-l="en">HOW TO INSTALL (1 MINUTE)</span></h2>
 <div class="step"><div class="n">1</div><div><b data-l="ms">Muat turun fail APK</b><b data-l="en">Download the APK file</b><span data-l="ms">Tekan butang di atas. Pelayar mungkin tanya "fail ini boleh membahayakan". Itu amaran biasa untuk semua fail APK.</span><span data-l="en">Tap the button above. Your browser may warn that "this file may be harmful". That is the usual warning for every APK file.</span></div></div>
 <div class="step"><div class="n">2</div><div><b data-l="ms">Buka fail itu</b><b data-l="en">Open the file</b><span data-l="ms">Android akan minta kebenaran "Pasang dari sumber ini". Tekan Tetapan, hidupkan, kemudian kembali.</span><span data-l="en">Android will ask to allow "Install from this source". Tap Settings, switch it on, then go back.</span></div></div>
@@ -75,6 +90,8 @@ body.ms [data-l=en],body.en [data-l=ms]{display:none!important}
 <div class="sha" id="sha"><span data-l="ms">Checksum SHA-256 akan dipaparkan di sini.</span><span data-l="en">The SHA-256 checksum will be shown here.</span></div>
 
 <div class="qr"><img src="qr.png" alt="QR"><div><span data-l="ms">Imbas untuk buka halaman ini</span><span data-l="en">Scan to open this page</span></div></div>
+
+<div class="note"><span data-l="ms">Buat masa ini untuk Android sahaja. Versi iPhone belum ada.</span><span data-l="en">Android only for now. There is no iPhone version yet.</span></div>
 </main>
 <footer>Istiqamah • Developed by FaridAssamani • ©2026</footer>
 </div>
@@ -100,7 +117,7 @@ body.ms [data-l=en],body.en [data-l=ms]{display:none!important}
   fetch('https://api.github.com/repos/farawyadal/istiqamah/releases/latest').then(function (r) { return r.json(); }).then(function (j) {
     var a = (j.assets || []).filter(function (x) { return /\.apk$/.test(x.name); })[0];
     if (!a) return;
-    document.getElementById('dl').href = a.browser_download_url;
+    document.getElementById('dl').href = a.browser_download_url; document.getElementById('dl2').href = a.browser_download_url;
     info = { v: (j.tag_name || '').replace(/^v/, '').replace(/-\d+$/, ''), mb: (a.size / 1048576).toFixed(1), sha: a.digest ? String(a.digest).replace(/^sha256:/, '') : '' };
     render();
   }).catch(function () {});
