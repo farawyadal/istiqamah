@@ -263,3 +263,13 @@ button{font-family:inherit;cursor:pointer}
 .card.bkx{display:flex;gap:12px;align-items:flex-start}.bxc{flex:none;width:64px;height:90px;border-radius:8px;object-fit:cover;background:#E9E2CB}
 .bxi{flex:1;min-width:0}.bxn{font-size:15px;font-weight:700;color:var(--ink)}.bxa{font-size:12px;color:var(--gold3);font-weight:600;margin-top:2px}.bxs{font-size:13px;line-height:1.5;color:var(--muted);margin:6px 0 8px}
 .bxi .btn.sm{display:inline-flex;align-items:center;min-height:38px;padding:0 16px;border-radius:12px;font-size:13px;text-decoration:none}
+.tbp{margin-left:auto;flex:none;width:40px;height:40px;border-radius:20px;border:1.5px solid var(--gold);background:transparent;color:var(--gold);font-size:26px;line-height:1;display:flex;align-items:center;justify-content:center;padding:0 0 3px}
+.sheetbg{position:fixed;inset:0;background:rgba(8,29,51,.5);z-index:30}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:31;max-width:520px;margin:0 auto;padding:12px 18px calc(18px + env(safe-area-inset-bottom,0px));border-radius:22px 22px 0 0;background:#FFFDF6;box-shadow:0 -6px 24px rgba(0,0,0,.25);max-height:88vh;overflow-y:auto}
+.sheet .grab{width:40px;height:4px;border-radius:2px;background:#C9BE9A;margin:0 auto 12px}
+.brow{display:flex;align-items:center;gap:12px;width:100%;margin:0 0 8px;padding:10px 12px;border-radius:16px;background:var(--card);border:1px solid var(--line);text-align:left;color:var(--ink);font:inherit}
+.brc{flex:none;width:44px;height:62px;border-radius:6px;object-fit:cover;background:#E9E2CB}.bri{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.brn{font-size:14px;font-weight:700}.bra{font-size:12px;font-weight:600;color:var(--gold3)}.brx{font-size:22px;color:#9A8F6E}
+.bdh{display:flex;gap:16px;align-items:flex-start;padding-top:6px}.bdc{flex:none;width:110px;height:154px;border-radius:10px;object-fit:cover;background:#E9E2CB}
+.bdt{font-size:19px;font-weight:700;line-height:1.25}.bda{font-size:13px;font-weight:600;color:var(--gold3);margin-top:6px}
+.bds{font-size:14px;line-height:1.6;margin-top:6px;white-space:pre-wrap}.bdb{display:flex;align-items:center;justify-content:center;text-decoration:none;margin-top:22px}

@@ -2,7 +2,7 @@
 (function () {
   'use strict';
   var L = window.IstiLogic, I18N = window.ISTI_I18N, ZONES = window.ISTI_ZONES, ZPTS = window.ISTI_ZONEPTS || [];
-  var APP_VERSION = '0.10.0';
+  var APP_VERSION = '0.10.1';
   var params = new URLSearchParams(location.search);
   var Cap = window.Capacitor;
   var isNative = !!(Cap && Cap.isNativePlatform && Cap.isNativePlatform());
@@ -181,7 +181,7 @@
   };
 
   function nav() {
-    var lagiGroup = ['lagi', 'tetapan', 'tentang', 'qiam', 'kiblat', 'hadis', 'khatam', 'pss', 'umr', 'rnk', 'buk', 'mas', 'cdg'].indexOf(screen) >= 0 && !(retTo && ['kiblat', 'hadis', 'khatam'].indexOf(screen) >= 0);
+    var lagiGroup = ['lagi', 'tetapan', 'tentang', 'qiam', 'kiblat', 'hadis', 'khatam', 'pss', 'umr', 'rnk', 'buk', 'bkd', 'mas', 'cdg'].indexOf(screen) >= 0 && !(retTo && ['kiblat', 'hadis', 'khatam'].indexOf(screen) >= 0);
     function tab(go, on, icon, label) {
       return '<button data-go="' + go + '" class="' + (on ? 'on' : '') + '" aria-current="' + (on ? 'page' : 'false') + '">' + icon + label + '</button>';
     }
@@ -303,8 +303,8 @@
       }).join('') + '</div></main>';
   }
 
-  function topbar(title, back) {
-    return '<div class="topbar">' + (back ? '<button class="back" data-go="' + (typeof back === 'string' ? back : 'lagi') + '" aria-label="' + u('kembali') + '">' + ICON.back + '</button>' : '<span style="width:12px"></span>') + '<div class="tt">' + title + '</div></div>';
+  function topbar(title, back, right) {
+    return '<div class="topbar">' + (back ? '<button class="back" data-go="' + (typeof back === 'string' ? back : 'lagi') + '" aria-label="' + u('kembali') + '">' + ICON.back + '</button>' : '<span style="width:12px"></span>') + '<div class="tt">' + title + '</div>' + (right || '') + '</div>';
   }
 
   function seg(name, val, items) {
@@ -839,6 +839,7 @@
     else if (screen === 'umr') html = viewUmrah();
     else if (screen === 'rnk') html = viewRank();
     else if (screen === 'buk') html = viewBuku();
+    else if (screen === 'bkd') html = viewBukuDetail();
     else if (screen === 'mas') html = viewMasjid();
     else if (screen === 'cdg') html = viewCadang();
     else if (screen === 'qiam') html = viewQiam();
@@ -873,13 +874,13 @@
   function go(s, push) {
     if (['kiblat', 'hadis', 'khatam'].indexOf(s) >= 0) retTo = (screen === 'utama' || screen === 'cab') ? screen : null;
     screen = s;
-    if (push && (['zkat', 'hadis', 'khatam', 'cabnew', 'pss', 'umr', 'rnk', 'buk', 'mas', 'cdg'].indexOf(s) >= 0 || s === 'tetapan' || s === 'tentang' || s === 'qiam' || s === 'kiblat')) history.pushState({ s: s }, '');
+    if (push && (['zkat', 'hadis', 'khatam', 'cabnew', 'pss', 'umr', 'rnk', 'buk', 'bkd', 'mas', 'cdg'].indexOf(s) >= 0 || s === 'tetapan' || s === 'tentang' || s === 'qiam' || s === 'kiblat')) history.pushState({ s: s }, '');
     render();
     if (s === 'utama') refreshData(false);
     if (s === 'mas') masLoad(false);
     if (s === 'buk') bukLoad();
   }
-  window.addEventListener('popstate', function () { if (!firstRun) { screen = screen === 'zkat' ? 'zikir' : screen === 'cabnew' ? 'cab' : (retTo && ['kiblat', 'hadis', 'khatam'].indexOf(screen) >= 0) ? retTo : 'lagi'; retTo = null; render(); } });
+  window.addEventListener('popstate', function () { if (!firstRun) { screen = screen === 'zkat' ? 'zikir' : screen === 'bkd' ? 'buk' : screen === 'cdg' ? CD.from : screen === 'buk' ? 'lagi' : screen === 'cabnew' ? 'cab' : (retTo && ['kiblat', 'hadis', 'khatam'].indexOf(screen) >= 0) ? retTo : 'lagi'; retTo = null; render(); } });
 
 
   /* ----- Ciri baharu: Hadis, Khatam, Cabaran, Puasa Sunat, Umrah ----- */
@@ -1111,7 +1112,7 @@
   var MS = { tab: 'near', q: '', list: null, busy: false, err: '', form: false, fn: '', ft: 'masjid', floc: null, sending: false, sent: false };
   var MFAV = load('isti.masfav', {});
   var BK = { list: null, busy: false, err: '' };
-  var CD = { kind: 'ciri', msg: '', sending: false, sent: false, err: '' };
+  var CD = { from: 'tentang', kind: 'ciri', msg: '', sending: false, sent: false, err: '' };
   var lastSend = 0;
 
   function getPos() {
@@ -1168,26 +1169,26 @@
     if (MS.busy) body = '<div class="note" style="text-align:center;margin:30px 0">' + tt('Mencari masjid dan surau berdekatan…', 'Finding nearby mosques and surau…') + '</div>';
     else if (MS.err && !MS.list) body = '<div class="card"><div class="note" style="margin:0 0 10px">' + MS.err + '</div><button class="btn wide" data-act="mrefresh">' + u('cuba') + '</button></div>';
     else body = '<div id="maslist">' + masRows() + '</div>';
-    var form = '';
-    if (MS.sent) form = '<div class="card"><div class="lbl gold">' + tt('Terima kasih', 'Thank you') + '</div><div class="note">' + tt('Menunggu pengesahan admin.', 'Waiting for admin approval.') + '</div><button class="btn wide ghost" data-act="madd" style="margin-top:10px">' + tt('Selesai', 'Done') + '</button></div>';
-    else if (MS.form) form = '<div class="card"><div class="lbl gold">' + tt('TAMBAH MASJID ATAU SURAU', 'ADD A MOSQUE OR SURAU') + '</div>' +
+    var sheet = '';
+    if (MS.sent) sheet = '<div class="sheetbg" data-act="madd"></div><div class="sheet"><div class="grab"></div><div class="lbl gold">' + tt('Terima kasih', 'Thank you') + '</div><div class="note">' + tt('Menunggu pengesahan admin.', 'Waiting for admin approval.') + '</div><button class="btn wide" data-act="madd" style="margin-top:12px">' + tt('Selesai', 'Done') + '</button></div>';
+    else if (MS.form) sheet = '<div class="sheetbg" data-act="madd"></div><div class="sheet"><div class="grab"></div><div class="lbl gold">' + tt('TAMBAH MASJID ATAU SURAU', 'ADD A MOSQUE OR SURAU') + '</div>' +
       '<span class="lbl" style="margin-top:10px">' + tt('NAMA', 'NAME') + '</span><input id="mfn" class="inp cin" maxlength="80" value="' + esc(MS.fn) + '" placeholder="' + tt('Contoh: Surau Taman Maju', 'e.g. Surau Taman Maju') + '">' +
-      '<span class="lbl" style="margin-top:10px">' + tt('JENIS', 'TYPE') + '</span><div class="seg"><button class="' + (MS.ft === 'masjid' ? 'on' : '') + '" data-act="mtype" data-t="masjid">' + tt('Masjid', 'Mosque') + '</button><button class="' + (MS.ft === 'surau' ? 'on' : '') + '" data-act="mtype" data-t="surau">Surau</button></div>' +
-      '<span class="lbl" style="margin-top:10px">' + tt('LOKASI', 'LOCATION') + '</span><button class="btn wide ghost" data-act="mgps">' + (MS.floc ? '📍 ' + MS.floc.lat.toFixed(4) + ', ' + MS.floc.lng.toFixed(4) : tt('📍 Guna lokasi semasa saya', '📍 Use my current location')) + '</button>' +
+      '<div class="seg" style="margin-top:10px"><button class="' + (MS.ft === 'masjid' ? 'on' : '') + '" data-act="mtype" data-t="masjid">' + tt('Masjid', 'Mosque') + '</button><button class="' + (MS.ft === 'surau' ? 'on' : '') + '" data-act="mtype" data-t="surau">Surau</button></div>' +
+      '<button class="btn wide ghost" data-act="mgps" style="margin-top:10px">' + (MS.floc ? '📍 ' + MS.floc.lat.toFixed(4) + ', ' + MS.floc.lng.toFixed(4) : tt('📍 Guna lokasi semasa saya', '📍 Use my current location')) + '</button>' +
       '<div class="note">' + tt('Ia akan disemak admin sebelum dipaparkan kepada orang lain. Tiada nama atau e-mel anda dihantar.', 'It will be reviewed by the admin before others can see it. Your name or email is never sent.') + '</div>' +
-      '<button class="btn wide" data-act="msend" style="margin-top:10px"' + (MS.sending ? ' disabled' : '') + '>' + tt('Hantar untuk semakan', 'Submit for review') + '</button><button class="btn wide ghost" data-act="madd" style="margin-top:8px">' + u('batal') + '</button></div>';
-    else form = '<button class="btn wide ghost" data-act="madd" style="margin:6px 0 10px">+ ' + tt('Tambah masjid atau surau', 'Add a mosque or surau') + '</button>';
-    return topbar(u('masjid'), true) + '<main class="scroll"><div class="note" style="margin:0 4px 8px">' + tt('Berdasarkan lokasi anda sekarang', 'Based on your current location') + '</div>' +
+      '<button class="btn wide" data-act="msend" style="margin-top:10px"' + (MS.sending ? ' disabled' : '') + '>' + tt('Hantar untuk semakan', 'Submit for review') + '</button></div>';
+    return topbar(u('masjid'), true, '<button class="tbp" data-act="madd" aria-label="' + tt('Tambah masjid atau surau', 'Add a mosque or surau') + '">+</button>') + '<main class="scroll"><div class="note" style="margin:0 4px 8px">' + tt('Berdasarkan lokasi anda sekarang', 'Based on your current location') + '</div>' +
       '<input id="masq" class="inp cin" type="search" value="' + esc(MS.q) + '" placeholder="' + tt('Cari masjid atau surau', 'Search mosque or surau') + '" aria-label="' + tt('Cari', 'Search') + '" style="width:100%;margin-bottom:8px">' +
       '<div class="chips" style="margin:0 0 8px">' + chip('near', tt('Terdekat', 'Nearest')) + chip('fav', tt('Kegemaran', 'Favourites')) + chip('all', tt('Semua', 'All')) + '</div>' +
-      body + form +
-      '<div class="note" style="margin:8px 4px 0">' + tt('Data asas daripada OpenStreetMap. Yang bertanda Disahkan telah disemak admin Istiqamah.', 'Base data from OpenStreetMap. Entries marked Verified were checked by the Istiqamah admin.') + '</div></main>';
+      body +
+      '<div class="note" style="margin:8px 4px 0">' + tt('Data asas daripada OpenStreetMap. Yang bertanda Disahkan telah disemak admin Istiqamah.', 'Base data from OpenStreetMap. Entries marked Verified were checked by the Istiqamah admin.') + '</div></main>' + sheet;
   }
 
   function bukLoad() {
     if (BK.busy || !window.ISTI_NET) return;
+    if (BK.list && BK.list.length && Date.now() - (BK.at || 0) < 600000) return;
     BK.busy = true; BK.err = ''; render();
-    ISTI_NET.query('buku', null, null, 100).then(function (r) { BK.list = r.sort(function (a, b) { return (b.ts || 0) - (a.ts || 0); }); })
+    ISTI_NET.query('buku', null, null, 100).then(function (r) { BK.list = r.sort(function (a, b) { return (b.ts || 0) - (a.ts || 0); }); BK.at = Date.now(); })
       .catch(function () { BK.err = tt('Tidak dapat memuat senarai buku. Semak sambungan internet.', 'Could not load the book list. Check your internet connection.'); })
       .then(function () { BK.busy = false; render(); });
   }
@@ -1196,20 +1197,26 @@
     if (BK.busy) body = '<div class="note" style="text-align:center;margin:40px 0">' + tt('Memuatkan…', 'Loading…') + '</div>';
     else if (BK.err) body = '<div class="card"><div class="note" style="margin:0 0 10px">' + BK.err + '</div><button class="btn wide" data-act="bukrefresh">' + u('cuba') + '</button></div>';
     else if (!BK.list || !BK.list.length) body = '<div class="bkempty"><div style="font-size:40px">📚</div><div class="bkt">' + tt('Akan datang', 'Coming soon') + '</div><div class="note" style="margin-top:6px">' + tt('Senarai buku agama pilihan akan dipaparkan di sini, insya-Allah.', 'A list of recommended Islamic books will appear here, insha’Allah.') + '</div></div>';
-    else body = BK.list.map(function (b) {
-      var safe = function (s) { return /^https:\/\//i.test(s || '') ? esc(s) : ''; };
-      return '<div class="card bkx">' + (safe(b.kulit) ? '<img class="bxc" src="' + safe(b.kulit) + '" alt="" loading="lazy" onerror="this.style.visibility=\'hidden\'">' : '<div class="bxc"></div>') +
-        '<div class="bxi"><div class="bxn">' + esc(b.tajuk) + '</div><div class="bxa">' + esc(b.penulis) + '</div><div class="bxs">' + esc(b.sinopsis) + '</div>' +
-        (safe(b.url) ? '<a class="btn sm" target="_blank" rel="noopener" href="' + safe(b.url) + '">' + esc(b.kedai || tt('Beli', 'Buy')) + (b.harga ? ' · ' + esc(b.harga) : '') + '</a>' : (b.kedai || b.harga ? '<div class="note">' + esc((b.kedai || '') + (b.kedai && b.harga ? ' · ' : '') + (b.harga || '')) + '</div>' : '')) + '</div></div>';
+    else body = BK.list.map(function (b, ix) {
+      var cv = /^https:\/\//i.test(b.kulit || '') ? '<img class="brc" src="' + esc(b.kulit) + '" alt="" loading="lazy" onerror="this.style.visibility=\'hidden\'">' : '<div class="brc"></div>';
+      return '<button class="brow" data-bk="' + ix + '">' + cv + '<span class="bri"><span class="brn">' + esc(b.tajuk) + '</span><span class="bra">' + esc(b.penulis) + '</span></span><span class="brx">›</span></button>';
     }).join('');
-    return topbar(u('buku'), true) + '<main class="scroll">' + body +
-      '<div class="card" style="margin-top:12px"><div class="lbl gold">' + tt('Ada cadangan buku?', 'Have a book suggestion?') + '</div><div class="note">' + tt('Klik untuk hantar cadangan terus dalam app. Tiada e-mel diperlukan.', 'Tap to send a suggestion right in the app. No email needed.') + '</div><button class="btn wide ghost" data-act="cdbuku" style="margin-top:10px">' + tt('Hantar cadangan', 'Send suggestion') + '</button></div></main>';
+    return topbar(u('buku'), true, '<button class="tbp" data-act="cdbuku" aria-label="' + tt('Cadangan buku', 'Suggest a book') + '">+</button>') + '<main class="scroll">' + body + '</main>';
+  }
+  function viewBukuDetail() {
+    var b = BK.list && BK.list[BK.sel]; if (!b) return viewBuku();
+    var safe = function (x) { return /^https:\/\//i.test(x || '') ? esc(x) : ''; };
+    var buy = (b.kedai || '') + (b.kedai && b.harga ? ' · ' : '') + (b.harga || '');
+    return topbar(tt('Butiran Buku', 'Book Details'), 'buk') + '<main class="scroll"><div class="bdh">' + (safe(b.kulit) ? '<img class="bdc" src="' + safe(b.kulit) + '" alt="" onerror="this.style.visibility=\'hidden\'">' : '<div class="bdc"></div>') +
+      '<div><div class="bdt">' + esc(b.tajuk) + '</div><div class="bda">' + esc(b.penulis) + '</div>' + (buy ? '<div class="note" style="margin-top:8px">' + esc(buy) + '</div>' : '') + '</div></div>' +
+      '<div class="lbl gold" style="margin-top:20px">' + tt('SINOPSIS', 'SYNOPSIS') + '</div><div class="bds">' + esc(b.sinopsis) + '</div>' +
+      (safe(b.url) ? '<a class="btn wide bdb" target="_blank" rel="noopener" href="' + safe(b.url) + '">' + tt('Beli di ', 'Buy at ') + esc(b.kedai || tt('kedai', 'shop')) + (b.harga ? ' · ' + esc(b.harga) : '') + '</a>' : '') + '</main>';
   }
 
   function viewCadang() {
     var k = function (id, l) { return '<button class="' + (CD.kind === id ? 'on' : '') + '" data-act="cdkind" data-k="' + id + '">' + l + '</button>'; };
-    if (CD.sent) return topbar(tt('Cadangan', 'Suggestion'), true) + '<main class="scroll"><div class="card"><div class="lbl gold">' + tt('Terima kasih', 'Thank you') + '</div><div class="note">' + tt('Cadangan anda telah dihantar kepada admin.', 'Your suggestion has been sent to the admin.') + '</div><button class="btn wide" data-go="lagi" style="margin-top:10px">' + tt('Selesai', 'Done') + '</button></div></main>';
-    return topbar(tt('Cadangan', 'Suggestion'), true) + '<main class="scroll"><div class="card"><span class="lbl gold">' + tt('JENIS', 'TYPE') + '</span>' +
+    if (CD.sent) return topbar(tt('Cadangan', 'Suggestion'), CD.from) + '<main class="scroll"><div class="card"><div class="lbl gold">' + tt('Terima kasih', 'Thank you') + '</div><div class="note">' + tt('Cadangan anda telah dihantar kepada admin.', 'Your suggestion has been sent to the admin.') + '</div><button class="btn wide" data-go="' + CD.from + '" style="margin-top:10px">' + tt('Selesai', 'Done') + '</button></div></main>';
+    return topbar(tt('Cadangan', 'Suggestion'), CD.from) + '<main class="scroll"><div class="card"><span class="lbl gold">' + tt('JENIS', 'TYPE') + '</span>' +
       '<div class="seg" style="margin-top:8px">' + k('ciri', tt('Ciri baharu', 'New feature')) + k('pembetulan', tt('Pembetulan', 'Correction')) + k('buku', tt('Buku', 'Book')) + '</div>' +
       '<span class="lbl" style="margin-top:12px">' + tt('CADANGAN ANDA', 'YOUR SUGGESTION') + '</span><textarea id="cdmsg" class="inp cin" maxlength="500" rows="6" style="width:100%;padding:10px 12px;min-height:130px" placeholder="' + (CD.kind === 'buku' ? tt('Tajuk buku, penulis dan sebab ia sesuai', 'Book title, author and why it fits') : tt('Tulis cadangan atau pembetulan anda', 'Write your suggestion or correction')) + '">' + esc(CD.msg) + '</textarea>' +
       (CD.err ? '<div class="note" style="color:#B3261E">' + CD.err + '</div>' : '') +
@@ -1307,7 +1314,7 @@
 
   /* ---------- acara ---------- */
   root.addEventListener('click', function (e) {
-    var el = e.target.closest('[data-go],[data-filter],[data-bell],[data-tar],[data-set],[data-act],[data-zsel],[data-zkadd],[data-zdel],[data-qchk],[data-qdel],[data-sbell],[data-mfav]');
+    var el = e.target.closest('[data-go],[data-filter],[data-bell],[data-tar],[data-set],[data-act],[data-zsel],[data-zkadd],[data-zdel],[data-qchk],[data-qdel],[data-sbell],[data-mfav],[data-bk]');
     if (!el) return;
     if (el.dataset.go) {
       var gt = el.dataset.go;
@@ -1356,6 +1363,7 @@
     if (el.dataset.sbell) {
       var sk = el.dataset.sbell; S.sbells = S.sbells || {}; S.sbells[sk] = sbellOn(sk) ? 0 : 1; persist(); reschedule(); return render();
     }
+    if (el.dataset.bk) { BK.sel = +el.dataset.bk; return go('bkd', true); }
     if (el.dataset.mfav) {
       var fid = el.dataset.mfav;
       if (MFAV[fid]) delete MFAV[fid]; else { var fm = (MS.list || []).filter(function (x) { return x.id === fid; })[0]; if (fm) MFAV[fid] = { n: fm.n, t: fm.t, lat: fm.lat, lng: fm.lng, ver: fm.ver }; }
@@ -1377,8 +1385,8 @@
         .then(function () { MS.sending = false; render(); });
     }
     if (a === 'bukrefresh') return bukLoad();
-    if (a === 'cdopen') { CD.kind = 'ciri'; CD.sent = false; CD.err = ''; return go('cdg', true); }
-    if (a === 'cdbuku') { CD.kind = 'buku'; CD.sent = false; CD.err = ''; return go('cdg', true); }
+    if (a === 'cdopen') { CD.from = 'tentang'; CD.kind = 'ciri'; CD.sent = false; CD.err = ''; return go('cdg', true); }
+    if (a === 'cdbuku') { CD.from = 'buk'; CD.kind = 'buku'; CD.sent = false; CD.err = ''; return go('cdg', true); }
     if (a === 'cdkind') { CD.kind = el.dataset.k; return render(); }
     if (a === 'cdsend') {
       if (CD.msg.trim().length < 5) { CD.err = tt('Tulis sekurang-kurangnya 5 huruf.', 'Write at least 5 characters.'); return render(); }
