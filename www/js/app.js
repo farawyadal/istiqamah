@@ -2,7 +2,7 @@
 (function () {
   'use strict';
   var L = window.IstiLogic, I18N = window.ISTI_I18N, ZONES = window.ISTI_ZONES, ZPTS = window.ISTI_ZONEPTS || [];
-  var APP_VERSION = '0.10.2';
+  var APP_VERSION = '0.10.3';
   var params = new URLSearchParams(location.search);
   var Cap = window.Capacitor;
   var isNative = !!(Cap && Cap.isNativePlatform && Cap.isNativePlatform());
@@ -364,6 +364,7 @@
       '<div class="card"><div class="lbl">' + u('tarawih') + '</div>' + seg('tar', S.tar, [[8, '8'], [10, '10'], [20, '20']]) + '</div>' +
       tahCard() +
       '<div class="card"><div class="lbl">' + tt('NOTIFIKASI DHUHA', 'DUHA NOTIFICATION') + '</div>' + seg('dhuhaN', L.bellOn(S.bells, 'dhuhaa') ? 'afdhal' : 'mula', [['mula', tt('Waktu mula', 'Earliest time')], ['afdhal', tt('Waktu afdhal', 'Best time')]]) + '<div class="note">' + tt('Waktu afdhal ialah kira-kira suku hari dari Syuruk hingga Maghrib, ketika matahari terik. Solat Dhuha bila-bila masa antara waktu mula dan sebelum Zohor tetap sah.', 'The best time is about a quarter of the day from sunrise to sunset, when the sun is hot. Duha at any time between its start and before Dhuhr is valid.') + '</div></div>' +
+      '<div class="sech">' + tt('PRIVASI', 'PRIVACY') + '</div><div class="card"><div class="anr"><div class="anx"><div class="ann">' + tt('Kiraan penggunaan tanpa nama', 'Anonymous usage count') + '</div><div class="note" style="margin-top:3px">' + tt('Hantar satu isyarat sehari untuk bantu kira berapa peranti aktif. Tiada nama, emel, lokasi atau ID peranti dihantar.', 'Sends one signal a day to help count active devices. No name, email, location or device ID is sent.') + '</div></div><button class="psw' + (S.anon === false ? '' : ' on') + '" data-act="anontog" aria-pressed="' + (S.anon !== false) + '" aria-label="' + tt('Kiraan penggunaan tanpa nama', 'Anonymous usage count') + '"><i></i></button></div></div>' +
       sech(u('secBahasa')) +
       '<div class="card"><div class="lbl">' + u('bahasa') + '</div>' + seg('lang', S.lang, [['ms', 'Bahasa Melayu'], ['en', 'English']]) + '</div>' +
       (isNative ? sech(u('secNotif')) + perm : '') +
@@ -1443,6 +1444,7 @@
     if (a === 'utick') { var un = el.dataset.n; UM.done[un] = !UM.done[un]; uSave(); return render(); }
     if (a === 'utab') { UM.tab = el.dataset.v; uSave(); return render(); }
     if (a === 'uptick') { var pid = el.dataset.id; UM.p.done[pid] = !UM.p.done[pid]; uSave(); return render(); }
+    if (a === 'anontog') { S.anon = S.anon === false; persist(); if (S.anon !== false) pingUsage(); return render(); }
     if (a === 'ptog') { var pg = el.dataset.id; UM.p.off[pg] = !UM.p.off[pg]; uSave(); return render(); }
     if (a === 'pnew') { UM.adding = true; render(); var ui = document.getElementById('uadd'); if (ui) ui.focus(); return; }
     if (a === 'pcancel') { UM.adding = false; return render(); }
@@ -1539,6 +1541,7 @@
   render();
   pullZikir().then(pullOpen);
   refreshData(false).then(function () { reschedule(); return autoZone(false); });
+  setTimeout(pingUsage, 4000);
   checkUpdate(false);
 
   var lastMin = -1;
@@ -1546,7 +1549,16 @@
     var d = now(), m = d.getHours() * 60 + d.getMinutes();
     if (m !== lastMin) { lastMin = m; if (screen === 'utama' && !firstRun) render(); }
   }, 15000);
+  /* kiraan penggunaan tanpa nama (GoatCounter): satu isyarat sehari, tiada data peribadi */
+  function pingUsage() {
+    if (S.anon === false || typeof fetch !== 'function' || /^(localhost|127\.)/.test(location.hostname) && !isNative) return;
+    var day = L.ymd(now()), last = load('isti.ping', '');
+    if (last === day) return;
+    fetch('https://istiqamah.goatcounter.com/count?p=' + encodeURIComponent('/app/v' + APP_VERSION) + '&t=' + encodeURIComponent('Istiqamah app') + '&rnd=' + Math.random().toString(36).slice(2, 8), { mode: 'no-cors', cache: 'no-store' })
+      .then(function () { save('isti.ping', day); }).catch(function () { /* cuba lagi lain kali */ });
+  }
   function wake() {
+    pingUsage();
     wReady = !WGT; pullZikir().then(function () { render(); return pullOpen(); }); refreshData(false); reschedule(); checkUpdate(false); autoZone(false);
   }
   document.addEventListener('visibilitychange', function () { if (!document.hidden) wake(); });

@@ -277,3 +277,4 @@ button{font-family:inherit;cursor:pointer}
 .rcs{flex:none;width:36px;height:36px;border-radius:18px;background:var(--navy);color:var(--gold);display:flex;align-items:center;justify-content:center;font-size:18px}
 .rci{flex:1;display:flex;flex-direction:column;gap:2px}.rcl{font-size:11px;font-weight:700;letter-spacing:.08em;color:var(--gold3)}.rcv{font-size:14px;color:var(--muted)}.rcv b{font-size:18px;color:var(--ink)}
 .btn.dis{background:#CFC8B3;color:#6F7885;box-shadow:none}
+.anr{display:flex;align-items:center;gap:12px}.anx{flex:1}.ann{font-size:14px;font-weight:700}
