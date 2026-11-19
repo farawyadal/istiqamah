@@ -2,7 +2,7 @@
 (function () {
   'use strict';
   var L = window.IstiLogic, I18N = window.ISTI_I18N, ZONES = window.ISTI_ZONES, ZPTS = window.ISTI_ZONEPTS || [];
-  var APP_VERSION = '0.10.3';
+  var APP_VERSION = '0.10.4';
   var params = new URLSearchParams(location.search);
   var Cap = window.Capacitor;
   var isNative = !!(Cap && Cap.isNativePlatform && Cap.isNativePlatform());
@@ -18,6 +18,8 @@
   if (params.get('male') === '0') S.male = false;
   if (params.get('male') === '1') S.male = true;
   if (params.get('lang')) S.lang = params.get('lang');
+  /* v0.10.4: Dhuha satu waktu sahaja. Gabung tetapan lama (mula/afdhal) kepada satu ingatan. */
+  if (S.bells && S.bells.dhuhaa !== undefined) { S.bells.dhuha = (S.bells.dhuha || S.bells.dhuhaa) ? 1 : 0; delete S.bells.dhuhaa; }
   if (params.get('tar')) S.tar = +params.get('tar');
   function persist() { save('isti.settings', S); }
   function esc(x) { return String(x).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
@@ -363,7 +365,7 @@
       '<div class="card"><div class="lbl">' + u('jantina') + '</div>' + seg('male', S.male ? 1 : 0, [[1, u('lelaki')], [0, u('perempuan')]]) + '<div class="note">' + u('jantinaNota') + '</div></div>' +
       '<div class="card"><div class="lbl">' + u('tarawih') + '</div>' + seg('tar', S.tar, [[8, '8'], [10, '10'], [20, '20']]) + '</div>' +
       tahCard() +
-      '<div class="card"><div class="lbl">' + tt('NOTIFIKASI DHUHA', 'DUHA NOTIFICATION') + '</div>' + seg('dhuhaN', L.bellOn(S.bells, 'dhuhaa') ? 'afdhal' : 'mula', [['mula', tt('Waktu mula', 'Earliest time')], ['afdhal', tt('Waktu afdhal', 'Best time')]]) + '<div class="note">' + tt('Waktu afdhal ialah kira-kira suku hari dari Syuruk hingga Maghrib, ketika matahari terik. Solat Dhuha bila-bila masa antara waktu mula dan sebelum Zohor tetap sah.', 'The best time is about a quarter of the day from sunrise to sunset, when the sun is hot. Duha at any time between its start and before Dhuhr is valid.') + '</div></div>' +
+      '<div class="card"><div class="lbl">' + tt('WAKTU DHUHA', 'DUHA TIME') + '</div><div class="note" style="margin:6px 0 0;font-size:14px;line-height:1.6;color:var(--ink)">' + tt('Waktu Dhuha bermula selepas selesai Syuruk sehingga tegak matahari, iaitu sebelum waktu Zohor.', 'The Duha time begins after sunrise has finished until the sun is at its zenith, that is, before Dhuhr.') + '</div><div class="anr" style="margin-top:12px"><div class="anx"><div class="ann">' + tt('Ingatkan waktu Dhuha', 'Remind me of Duha') + '</div></div><button class="psw' + (L.bellOn(S.bells, 'dhuha') ? ' on' : '') + '" data-bell="dhuha" aria-pressed="' + L.bellOn(S.bells, 'dhuha') + '" aria-label="' + tt('Ingatkan waktu Dhuha', 'Remind me of Duha') + '"><i></i></button></div></div>' +
       '<div class="sech">' + tt('PRIVASI', 'PRIVACY') + '</div><div class="card"><div class="anr"><div class="anx"><div class="ann">' + tt('Kiraan penggunaan tanpa nama', 'Anonymous usage count') + '</div><div class="note" style="margin-top:3px">' + tt('Hantar satu isyarat sehari untuk bantu kira berapa peranti aktif. Tiada nama, emel, lokasi atau ID peranti dihantar.', 'Sends one signal a day to help count active devices. No name, email, location or device ID is sent.') + '</div></div><button class="psw' + (S.anon === false ? '' : ' on') + '" data-act="anontog" aria-pressed="' + (S.anon !== false) + '" aria-label="' + tt('Kiraan penggunaan tanpa nama', 'Anonymous usage count') + '"><i></i></button></div></div>' +
       sech(u('secBahasa')) +
       '<div class="card"><div class="lbl">' + u('bahasa') + '</div>' + seg('lang', S.lang, [['ms', 'Bahasa Melayu'], ['en', 'English']]) + '</div>' +
@@ -1109,7 +1111,8 @@
       '<div class="rrow"><div class="rbox"><b>' + tt('BERTURUT-TURUT', 'CURRENT STREAK') + '</b><span>' + r.cur + ' ' + tt('hari', 'days') + (r.cur > 0 ? ' 🔥' : '') + '</span></div><div class="rbox"><b>' + tt('TERPANJANG', 'LONGEST') + '</b><span>' + r.best + ' ' + tt('hari', 'days') + '</span></div></div>' +
       '<div class="card" style="margin-top:10px"><span class="lbl gold" style="margin-bottom:6px">' + tt('MATA 7 HARI LEPAS', 'POINTS, LAST 7 DAYS') + '</span><div class="rbars">' + bars + '</div></div>' +
       '<div class="card"><span class="lbl gold" style="margin-bottom:6px">' + tt('BAGAIMANA MATA DIPEROLEH', 'HOW POINTS ARE EARNED') + '</span>' + pts.map(function (x) { return '<div class="rpt"><span>' + x[en ? 1 : 0] + '</span><b>+' + x[2] + '</b></div>'; }).join('') + '</div>' +
-      '<div class="note" style="margin:6px 4px 0">' + tt('Hari dikira berturut bila ada sekurang-kurangnya satu amalan. Data hanya pada telefon ini. Tiada ranking dengan orang lain.', 'A day counts toward the streak when you do at least one deed. Data stays on this phone. There is no ranking against other people.') + '</div></main>';
+      '<div class="note" style="margin:6px 4px 0">' + tt('Hari dikira berturut bila ada sekurang-kurangnya satu amalan. Data hanya pada telefon ini. Tiada ranking dengan orang lain.', 'A day counts toward the streak when you do at least one deed. Data stays on this phone. There is no ranking against other people.') + '</div>' +
+      '<div class="note" style="margin:12px 16px 0;font-size:12px;line-height:1.6;text-align:center">' + tt('Ganjaran sebenar datang daripada Allah. Mata ini hanya penanda supaya kita istiqamah beribadat.', 'Reward truly comes from Allah. These points are only a marker to stay steadfast (istiqamah) in worship.') + '</div></main>';
   }
   /* ---------- Masjid & Surau, Buku Pilihan, Cadangan (dalam talian) ---------- */
   var MS = { tab: 'near', q: '', list: null, busy: false, err: '', form: false, fn: '', ft: 'masjid', floc: null, sending: false, sent: false };
@@ -1336,7 +1339,6 @@
       else if (n === 'lang') S.lang = v;
       else if (n === 'tar') S.tar = +v;
       else if (n === 'tahMode') S.tahMode = v;
-      else if (n === 'dhuhaN') { S.bells = S.bells || {}; S.bells.dhuha = v === 'mula' ? 1 : 0; S.bells.dhuhaa = v === 'afdhal' ? 1 : 0; }
       else if (n === 'zoneAuto') {
         S.zoneAuto = v === '1'; persist();
         if (S.zoneAuto && !firstRun) { render(); return autoZone(true); }
