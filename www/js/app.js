@@ -2,7 +2,8 @@
 (function () {
   'use strict';
   var L = window.IstiLogic, I18N = window.ISTI_I18N, ZONES = window.ISTI_ZONES, ZPTS = window.ISTI_ZONEPTS || [];
-  var APP_VERSION = '0.10.4';
+  var APP_VERSION = '0.10.5';
+  var APP_DATE = '19 Nov 2026';
   var params = new URLSearchParams(location.search);
   var Cap = window.Capacitor;
   var isNative = !!(Cap && Cap.isNativePlatform && Cap.isNativePlatform());
@@ -221,7 +222,7 @@
       var msg = loadState === 'loading' ? u('memuat') : u('tiadaData');
       var hh = L.umalqura(today);
       return header(zshort, dateLine(today, hh), '') +
-        '<main class="empty"><p>' + msg + '</p>' + (loadState === 'loading' ? '' : '<button class="btn" data-act="retry">' + u('cuba') + '</button>') + '</main>';
+        '<main class="empty">' + (loadState === 'loading' ? spin(msg) : '<p>' + msg + '</p><button class="btn" data-act="retry">' + u('cuba') + '</button>') + '</main>';
     }
     var tm = dayModel(L.addDays(today, 1), adj) || { items: td.items, h: td.h, flags: td.flags };
     var nowMin = today.getHours() * 60 + today.getMinutes();
@@ -483,7 +484,7 @@
       '<button class="btn wide" data-act="saveqr" style="margin-top:14px">' + u('simpanQR') + '</button></div>' +
       '<div class="card"><div class="lbl gold">' + u('maklumBalas') + '</div><button class="btn wide" data-act="cdopen" style="margin-top:8px">' + tt('Hantar cadangan dalam app', 'Send a suggestion in the app') + '</button><button class="btn wide ghost" data-act="mail" style="margin-top:8px">' + u('hantar') + '</button><div class="note">' + u('hantarNota') + '</div></div>' +
       '<div class="card dis"><div class="lbl">' + u('penafianTitle') + '</div><div class="dt">' + u('penafian') + '</div></div>' +
-      '<div class="foot"><b>Istiqamah</b> • Developed by FaridAssamani • ©2026 • v' + APP_VERSION + '</div></main>';
+      '<div class="foot"><b>Istiqamah</b> · v' + APP_VERSION + ' · ' + APP_DATE + ' · © ' + new Date().getFullYear() + '<br>Developed by FaridAssamani</div></main>';
   }
 
   function fmt12(hhmm) {
@@ -1115,7 +1116,7 @@
       '<div class="note" style="margin:12px 16px 0;font-size:12px;line-height:1.6;text-align:center">' + tt('Ganjaran sebenar datang daripada Allah. Mata ini hanya penanda supaya kita istiqamah beribadat.', 'Reward truly comes from Allah. These points are only a marker to stay steadfast (istiqamah) in worship.') + '</div></main>';
   }
   /* ---------- Masjid & Surau, Buku Pilihan, Cadangan (dalam talian) ---------- */
-  var MS = { tab: 'near', q: '', list: null, busy: false, err: '', form: false, fn: '', ft: 'masjid', floc: null, sending: false, sent: false };
+  var MS = { tab: 'near', list: null, busy: false, refreshing: false, err: '', ts: 0, form: false, fn: '', ft: 'masjid', floc: null, facc: null, fstep: 10, fpaste: false, pl: '', sending: false, sent: false };
   var MFAV = load('isti.masfav', {});
   var BK = { list: null, busy: false, err: '' };
   var CD = { from: 'tentang', kind: 'ciri', msg: '', sending: false, sent: false, err: '' };
@@ -1130,37 +1131,51 @@
       }, function () { res(sv); }, { enableHighAccuracy: false, timeout: 12000, maximumAge: 300000 });
     });
   }
+  var MAS_RAD = [2500, 8000, 20000];
+  function osmNear(loc, i) {
+    return ISTI_NET.osm(loc.lat, loc.lng, MAS_RAD[i]).then(function (r) { return (r.length >= 10 || i + 1 >= MAS_RAD.length) ? r : osmNear(loc, i + 1); });
+  }
   function masLoad(force) {
-    if (MS.busy || !window.ISTI_NET) return;
-    var cache = load('isti.mas', null);
-    if (!force && cache && Date.now() - cache.ts < 6 * 3600000 && MS.list === null) { MS.list = cache.list; MS.loc = cache.loc; return render(); }
+    if (MS.busy || MS.refreshing || !window.ISTI_NET) return;
+    var cache = load('isti.mas', null), here = load('isti.loc', null);
+    var near = cache && cache.list && cache.list.length && cache.loc && (!here || ISTI_NET.km(cache.loc.lat, cache.loc.lng, here.lat, here.lng) < 3);
+    if (!force && MS.list === null && near) {
+      MS.loc = here || cache.loc; MS.list = cache.list; MS.ts = cache.ts;
+      MS.list.forEach(function (m) { m.d = ISTI_NET.km(MS.loc.lat, MS.loc.lng, m.lat, m.lng); });
+      render();
+      if (Date.now() - cache.ts < 24 * 3600000) return;
+      return masFetch(true);
+    }
     if (!force && MS.list) return;
-    MS.busy = true; MS.err = ''; render();
-    getPos().then(function (loc) {
-      if (!loc) { MS.busy = false; MS.err = tt('Lokasi tidak diperoleh. Hidupkan lokasi dan cuba lagi.', 'Location unavailable. Turn on location and try again.'); return render(); }
-      MS.loc = loc;
+    return masFetch(MS.list !== null && MS.list.length > 0);
+  }
+  function masFetch(silent) {
+    if (silent) MS.refreshing = true; else MS.busy = true;
+    MS.err = ''; if (!silent) render();
+    return getPos().then(function (loc) {
+      if (!loc) { if (!silent) MS.err = tt('Lokasi tidak diperoleh. Hidupkan lokasi dan cuba lagi.', 'Location unavailable. Turn on location and try again.'); return; }
       return Promise.all([
         ISTI_NET.query('masjid', 'status', 'approved', 500).catch(function () { return []; }),
-        ISTI_NET.osm(loc.lat, loc.lng, 8000).catch(function () { return null; })
+        osmNear(loc, 0).catch(function () { return null; })
       ]).then(function (r) {
         var fs = r[0].map(function (m) { return { id: 'f' + m.id, n: m.n, t: m.t, lat: m.lat, lng: m.lng, ver: true }; });
         if (r[1] === null && !fs.length) throw new Error('net');
         var os = (r[1] || []).filter(function (o) {
           return !fs.some(function (f) { return ISTI_NET.km(f.lat, f.lng, o.lat, o.lng) < 0.08; });
         });
-        MS.list = fs.concat(os).map(function (m) { m.d = ISTI_NET.km(loc.lat, loc.lng, m.lat, m.lng); return m; });
-        save('isti.mas', { ts: Date.now(), list: MS.list, loc: loc });
+        var all = fs.concat(os).map(function (m) { m.d = ISTI_NET.km(loc.lat, loc.lng, m.lat, m.lng); return m; })
+          .filter(function (m) { return m.d < 25; }).sort(function (a, b) { return a.d - b.d; }).slice(0, 40);
+        MS.loc = loc; MS.list = all; MS.ts = Date.now();
+        save('isti.mas', { ts: MS.ts, list: all, loc: loc });
       });
-    }).catch(function () { MS.err = tt('Tidak dapat memuat senarai. Semak sambungan internet.', 'Could not load the list. Check your internet connection.'); })
-      .then(function () { MS.busy = false; render(); });
+    }).catch(function () { if (!silent) MS.err = tt('Tidak dapat memuat senarai. Semak sambungan internet.', 'Could not load the list. Check your internet connection.'); })
+      .then(function () { MS.busy = false; MS.refreshing = false; render(); });
   }
   function masRows() {
-    var q = MS.q.trim().toLowerCase(), all = (MS.list || []).slice();
-    var rows = MS.tab === 'fav' ? Object.keys(MFAV).map(function (k) { var m = MFAV[k]; m.id = k; if (MS.loc) m.d = ISTI_NET.km(MS.loc.lat, MS.loc.lng, m.lat, m.lng); return m; }) : all;
-    if (q) rows = rows.filter(function (m) { return m.n.toLowerCase().indexOf(q) >= 0; });
-    if (MS.tab === 'all') rows.sort(function (a, b) { return a.n.localeCompare(b.n); });
-    else { rows.sort(function (a, b) { return (a.d || 0) - (b.d || 0); }); if (MS.tab === 'near' && !q) rows = rows.slice(0, 30); }
-    if (!rows.length) return '<div class="note" style="text-align:center;margin:24px 0">' + (MS.tab === 'fav' ? tt('Belum ada kegemaran. Klik bintang pada mana-mana masjid atau surau.', 'No favourites yet. Tap the star on any mosque or surau.') : tt('Tiada hasil.', 'No results.')) + '</div>';
+    var rows = MS.tab === 'fav' ? Object.keys(MFAV).map(function (k) { var m = MFAV[k]; m.id = k; if (MS.loc) m.d = ISTI_NET.km(MS.loc.lat, MS.loc.lng, m.lat, m.lng); return m; }) : (MS.list || []).slice();
+    rows.sort(function (a, b) { return (a.d || 0) - (b.d || 0); });
+    if (MS.tab === 'near') rows = rows.slice(0, 10);
+    if (!rows.length) return '<div class="note" style="text-align:center;margin:24px 0">' + (MS.tab === 'fav' ? tt('Belum ada kegemaran. Klik bintang pada mana-mana masjid atau surau.', 'No favourites yet. Tap the star on any mosque or surau.') : tt('Tiada masjid atau surau ditemui berdekatan.', 'No mosque or surau found nearby.')) + '</div>';
     return rows.map(function (m) {
       var on = !!MFAV[m.id], ds = m.d == null ? '' : (m.d < 1 ? Math.round(m.d * 1000) + ' m' : m.d.toFixed(1) + ' km');
       return '<div class="mrow"><div class="mi"><div class="mn">' + esc(m.n) + (m.ver ? '<span class="mv">' + tt('DISAHKAN', 'VERIFIED') + '</span>' : '') + '</div>' +
@@ -1169,10 +1184,29 @@
         '<button class="mstar' + (on ? ' on' : '') + '" data-mfav="' + esc(m.id) + '" aria-label="' + tt('Kegemaran', 'Favourite') + '">' + (on ? '★' : '☆') + '</button></div>';
     }).join('');
   }
+  function spin(a, b) { return '<div class="spinw"><div class="donut" role="status" aria-label="' + esc(a) + '"></div><div class="spt">' + esc(a) + '</div>' + (b ? '<div class="note" style="margin:4px 0 0;text-align:center">' + esc(b) + '</div>' : '') + '</div>'; }
+  /* Lokasi borang: auto-kesan dengan ketepatan, geser, tampal pautan */
+  function parseLoc(t) {
+    t = String(t || '').trim(); var m;
+    if (/maps\.app\.goo\.gl|goo\.gl\/maps/i.test(t)) return { short: true };
+    if ((m = t.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/))) return { lat: +m[1], lng: +m[2] };
+    if ((m = t.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/))) return { lat: +m[1], lng: +m[2] };
+    if ((m = t.match(/[?&](?:q|ll|query|center|destination)=(-?\d+\.\d+)(?:,|%2C)\s*(-?\d+\.\d+)/i))) return { lat: +m[1], lng: +m[2] };
+    if ((m = t.match(/^(-?\d+(?:\.\d+)?)\s*[,;\s]\s*(-?\d+(?:\.\d+)?)$/))) return { lat: +m[1], lng: +m[2] };
+    return null;
+  }
+  function inMY(l) { return l && l.lat >= 0 && l.lat <= 8 && l.lng >= 99 && l.lng <= 120; }
+  function formLoc() {
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(function (p) {
+      if (!MS.form || MS.floc) return;
+      MS.floc = { lat: p.coords.latitude, lng: p.coords.longitude }; MS.facc = Math.round(p.coords.accuracy || 0); render();
+    }, function () { if (MS.form && !MS.floc) { MS.facc = -1; render(); } }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 30000 });
+  }
   function viewMasjid() {
     var chip = function (k, l) { return '<button class="chip' + (MS.tab === k ? ' on' : '') + '" data-act="mtab" data-t="' + k + '">' + l + '</button>'; };
     var body;
-    if (MS.busy) body = '<div class="note" style="text-align:center;margin:30px 0">' + tt('Mencari masjid dan surau berdekatan…', 'Finding nearby mosques and surau…') + '</div>';
+    if (MS.busy) body = spin(tt('Mencari masjid dan surau berdekatan', 'Finding nearby mosques and surau'), tt('Kali pertama di kawasan ini sahaja.', 'Only the first time in this area.'));
     else if (MS.err && !MS.list) body = '<div class="card"><div class="note" style="margin:0 0 10px">' + MS.err + '</div><button class="btn wide" data-act="mrefresh">' + u('cuba') + '</button></div>';
     else body = '<div id="maslist">' + masRows() + '</div>';
     var sheet = '';
@@ -1180,12 +1214,17 @@
     else if (MS.form) sheet = '<div class="sheetbg" data-act="madd"></div><div class="sheet"><div class="grab"></div><div class="lbl gold">' + tt('TAMBAH MASJID ATAU SURAU', 'ADD A MOSQUE OR SURAU') + '</div>' +
       '<span class="lbl" style="margin-top:10px">' + tt('NAMA', 'NAME') + '</span><input id="mfn" class="inp cin" maxlength="80" value="' + esc(MS.fn) + '" placeholder="' + tt('Contoh: Surau Taman Maju', 'e.g. Surau Taman Maju') + '">' +
       '<div class="seg" style="margin-top:10px"><button class="' + (MS.ft === 'masjid' ? 'on' : '') + '" data-act="mtype" data-t="masjid">' + tt('Masjid', 'Mosque') + '</button><button class="' + (MS.ft === 'surau' ? 'on' : '') + '" data-act="mtype" data-t="surau">Surau</button></div>' +
-      '<button class="btn wide ghost" data-act="mgps" style="margin-top:10px">' + (MS.floc ? '📍 ' + MS.floc.lat.toFixed(4) + ', ' + MS.floc.lng.toFixed(4) : tt('📍 Guna lokasi semasa saya', '📍 Use my current location')) + '</button>' +
+      '<span class="lbl" style="margin-top:10px">' + tt('LOKASI', 'LOCATION') + '</span>' + (MS.floc ?
+        '<div class="mloc"><div class="mlt">📍 ' + MS.floc.lat.toFixed(5) + ', ' + MS.floc.lng.toFixed(5) + '</div>' + (MS.facc > 0 ? '<div class="note" style="margin:2px 0 0">' + tt('Ketepatan kira-kira ' + MS.facc + ' m. Kalau anda di tepi bangunan, geser kedudukan:', 'Accuracy about ' + MS.facc + ' m. If you are beside the building, nudge the position:') + '</div>' : '<div class="note" style="margin:2px 0 0">' + tt('Geser kedudukan jika perlu:', 'Nudge the position if needed:') + '</div>') +
+        '<div class="mpad"><span></span><button data-act="mnudge" data-d="n">↑</button><span></span><button data-act="mnudge" data-d="w">←</button><button class="stp" data-act="mstep">' + MS.fstep + ' m</button><button data-act="mnudge" data-d="e">→</button><span></span><button data-act="mnudge" data-d="s">↓</button><span></span></div>' +
+        '<div class="note" style="margin:6px 0 0;text-align:center">' + tt('Setiap tekan geser ' + MS.fstep + ' m. Tekan nombor untuk tukar langkah.', 'Each press moves ' + MS.fstep + ' m. Tap the number to change the step.') + '</div></div>'
+        : '<div class="mloc"><div class="note" style="margin:0">' + (MS.facc === -1 ? tt('Lokasi tidak diperoleh. Tampal pautan atau koordinat di bawah.', 'Location unavailable. Paste a link or coordinates below.') : tt('Mengesan lokasi anda…', 'Detecting your location…')) + '</div></div>') +
+      '<div class="mbtns"><a class="btn ghost" target="_blank" rel="noopener" href="' + (MS.floc ? 'https://www.google.com/maps/search/?api=1&query=' + MS.floc.lat + ',' + MS.floc.lng : '#') + '"' + (MS.floc ? '' : ' aria-disabled="true"') + '>' + tt('Semak di Google Maps', 'Check in Google Maps') + '</a><button class="btn ghost" data-act="mpaste">' + tt('Tampal pautan / koordinat', 'Paste link / coordinates') + '</button></div>' +
+      (MS.fpaste ? '<input id="mpl" class="inp cin" value="' + esc(MS.pl) + '" placeholder="' + tt('Pautan Google Maps atau 4.4721, 101.0452', 'Google Maps link or 4.4721, 101.0452') + '"><button class="btn wide ghost" data-act="mparse" style="margin-top:8px">' + tt('Guna lokasi ini', 'Use this location') + '</button>' : '') +
       '<div class="note">' + tt('Ia akan disemak admin sebelum dipaparkan kepada orang lain. Tiada nama atau e-mel anda dihantar.', 'It will be reviewed by the admin before others can see it. Your name or email is never sent.') + '</div>' +
       '<button class="btn wide" data-act="msend" style="margin-top:10px"' + (MS.sending ? ' disabled' : '') + '>' + tt('Hantar untuk semakan', 'Submit for review') + '</button></div>';
-    return topbar(u('masjid'), true, '<button class="tbp" data-act="madd" aria-label="' + tt('Tambah masjid atau surau', 'Add a mosque or surau') + '">+</button>') + '<main class="scroll"><div class="note" style="margin:0 4px 8px">' + tt('Berdasarkan lokasi anda sekarang', 'Based on your current location') + '</div>' +
-      '<input id="masq" class="inp cin" type="search" value="' + esc(MS.q) + '" placeholder="' + tt('Cari masjid atau surau', 'Search mosque or surau') + '" aria-label="' + tt('Cari', 'Search') + '" style="width:100%;margin-bottom:8px">' +
-      '<div class="chips" style="margin:0 0 8px">' + chip('near', tt('Terdekat', 'Nearest')) + chip('fav', tt('Kegemaran', 'Favourites')) + chip('all', tt('Semua', 'All')) + '</div>' +
+    return topbar(u('masjid'), true, '<button class="tbp" data-act="madd" aria-label="' + tt('Tambah masjid atau surau', 'Add a mosque or surau') + '">+</button>') + '<main class="scroll"><div class="note" style="margin:0 4px 8px">' + (MS.tab === 'near' ? tt('10 terdekat dari lokasi anda · disimpan dalam telefon', '10 nearest to you · saved on this phone') + (MS.ts ? ' · ' + new Date(MS.ts).toLocaleDateString(S.lang === 'en' ? 'en-GB' : 'ms-MY', { day: 'numeric', month: 'short' }) : '') + (MS.refreshing ? ' · ' + tt('menyegar…', 'refreshing…') : ' · <button class="lnk" data-act="mrefresh">' + tt('Segar semula', 'Refresh') + '</button>') : tt('Disimpan dalam telefon, nampak walaupun tiada talian', 'Saved on this phone, visible offline')) + '</div>' +
+      '<div class="chips" style="margin:0 0 8px">' + chip('near', tt('Terdekat', 'Nearest')) + chip('fav', tt('Kegemaran', 'Favourites')) + '</div>' +
       body +
       '<div class="note" style="margin:8px 4px 0">' + tt('Data asas daripada OpenStreetMap. Yang bertanda Disahkan telah disemak admin Istiqamah.', 'Base data from OpenStreetMap. Entries marked Verified were checked by the Istiqamah admin.') + '</div></main>' + sheet;
   }
@@ -1200,7 +1239,7 @@
   }
   function viewBuku() {
     var body;
-    if (BK.busy) body = '<div class="note" style="text-align:center;margin:40px 0">' + tt('Memuatkan…', 'Loading…') + '</div>';
+    if (BK.busy) body = spin(tt('Memuatkan senarai buku', 'Loading the book list'));
     else if (BK.err) body = '<div class="card"><div class="note" style="margin:0 0 10px">' + BK.err + '</div><button class="btn wide" data-act="bukrefresh">' + u('cuba') + '</button></div>';
     else if (!BK.list || !BK.list.length) body = '<div class="bkempty"><div style="font-size:40px">📚</div><div class="bkt">' + tt('Akan datang', 'Coming soon') + '</div><div class="note" style="margin-top:6px">' + tt('Senarai buku agama pilihan akan dipaparkan di sini, insya-Allah.', 'A list of recommended Islamic books will appear here, insha’Allah.') + '</div></div>';
     else body = BK.list.map(function (b, ix) {
@@ -1377,9 +1416,23 @@
     var a = el.dataset.act;
     if (a === 'mtab') { MS.tab = el.dataset.t; return render(); }
     if (a === 'mrefresh') return masLoad(true);
-    if (a === 'madd') { MS.form = !MS.form && !MS.sent; MS.sent = false; MS.fn = ''; MS.floc = null; return render(); }
+    if (a === 'madd') { MS.form = !MS.form && !MS.sent; MS.sent = false; MS.fn = ''; MS.floc = null; MS.facc = null; MS.fstep = 10; MS.fpaste = false; MS.pl = ''; render(); if (MS.form) formLoc(); return; }
     if (a === 'mtype') { MS.ft = el.dataset.t; return render(); }
-    if (a === 'mgps') return getPos().then(function (l) { if (l) MS.floc = l; else toast(tt('Lokasi tidak diperoleh', 'Location unavailable')); render(); });
+    if (a === 'mnudge') {
+      if (!MS.floc) return;
+      var dl = MS.fstep / 111320, dn = MS.fstep / (111320 * Math.cos(MS.floc.lat * Math.PI / 180)), d = el.dataset.d;
+      MS.floc = { lat: MS.floc.lat + (d === 'n' ? dl : d === 's' ? -dl : 0), lng: MS.floc.lng + (d === 'e' ? dn : d === 'w' ? -dn : 0) };
+      return render();
+    }
+    if (a === 'mstep') { MS.fstep = MS.fstep === 5 ? 10 : MS.fstep === 10 ? 25 : MS.fstep === 25 ? 50 : 5; return render(); }
+    if (a === 'mpaste') { MS.fpaste = !MS.fpaste; return render(); }
+    if (a === 'mparse') {
+      var pl = parseLoc(MS.pl);
+      if (pl && pl.short) return toast(tt('Pautan pendek tidak boleh dibaca. Buka pautan itu dahulu, kemudian salin koordinat atau pautan penuh.', 'Short links cannot be read. Open the link first, then copy the coordinates or the full link.'));
+      if (!pl) return toast(tt('Pautan atau koordinat tidak dikenali', 'Link or coordinates not recognised'));
+      if (!inMY(pl)) return toast(tt('Lokasi mesti dalam Malaysia', 'Location must be in Malaysia'));
+      MS.floc = pl; MS.facc = null; MS.fpaste = false; return render();
+    }
     if (a === 'msend') {
       if (MS.fn.trim().length < 3) return toast(tt('Isi nama (sekurang-kurangnya 3 huruf)', 'Enter a name (at least 3 letters)'));
       if (!MS.floc) return toast(tt('Pilih lokasi dahulu', 'Pick the location first'));
@@ -1525,7 +1578,7 @@
   });
   root.addEventListener('input', function (e) {
     var t = e.target;
-    if (t.id === 'masq') { MS.q = t.value; var l = document.getElementById('maslist'); if (l) l.innerHTML = masRows(); }
+    if (t.id === 'mpl') MS.pl = t.value;
     else if (t.id === 'mfn') MS.fn = t.value;
     else if (t.id === 'cdmsg') CD.msg = t.value;
   });

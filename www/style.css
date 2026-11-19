@@ -278,3 +278,9 @@ button{font-family:inherit;cursor:pointer}
 .rci{flex:1;display:flex;flex-direction:column;gap:2px}.rcl{font-size:11px;font-weight:700;letter-spacing:.08em;color:var(--gold3)}.rcv{font-size:14px;color:var(--muted)}.rcv b{font-size:18px;color:var(--ink)}
 .btn.dis{background:#CFC8B3;color:#6F7885;box-shadow:none}
 .anr{display:flex;align-items:center;gap:12px}.anx{flex:1}.ann{font-size:14px;font-weight:700}
+
+.spinw{display:flex;flex-direction:column;align-items:center;margin:34px 0}.donut{width:44px;height:44px;border-radius:50%;border:5px solid #E2D8BC;border-top-color:var(--green,#0E7C66);animation:isp .9s linear infinite}.spt{font-size:14px;font-weight:700;margin-top:12px;text-align:center}@keyframes isp{to{transform:rotate(360deg)}}@media (prefers-reduced-motion:reduce){.donut{animation-duration:2.4s}}
+.mloc{padding:12px;border-radius:14px;background:#DDF1E8;border:1.5px solid #0E7C66;margin-top:4px}.mlt{font-size:14px;font-weight:700}
+.mpad{display:grid;grid-template-columns:46px 46px 46px;gap:6px;justify-content:center;margin-top:10px}.mpad button{height:40px;border-radius:12px;border:1px solid #9A8F6E;background:#fff;font-size:16px;font-weight:700;color:#0E7C66;font-family:inherit}.mpad .stp{background:#0E7C66;color:#fff;font-size:11px;border-color:#0E7C66}
+.mbtns{display:flex;gap:8px;margin:10px 0 0}.mbtns .btn{flex:1;font-size:12px;padding:0 6px;display:flex;align-items:center;justify-content:center;text-align:center;text-decoration:none}
+.lnk{border:0;background:none;color:var(--green,#0E7C66);font:inherit;font-weight:700;text-decoration:underline;padding:0}
