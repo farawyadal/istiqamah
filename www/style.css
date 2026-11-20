@@ -284,3 +284,16 @@ button{font-family:inherit;cursor:pointer}
 .mpad{display:grid;grid-template-columns:46px 46px 46px;gap:6px;justify-content:center;margin-top:10px}.mpad button{height:40px;border-radius:12px;border:1px solid #9A8F6E;background:#fff;font-size:16px;font-weight:700;color:#0E7C66;font-family:inherit}.mpad .stp{background:#0E7C66;color:#fff;font-size:11px;border-color:#0E7C66}
 .mbtns{display:flex;gap:8px;margin:10px 0 0}.mbtns .btn{flex:1;font-size:12px;padding:0 6px;display:flex;align-items:center;justify-content:center;text-align:center;text-decoration:none}
 .lnk{border:0;background:none;color:var(--green,#0E7C66);font:inherit;font-weight:700;text-decoration:underline;padding:0}
+.mapbox{position:relative;z-index:0;isolation:isolate;height:230px;border-radius:14px;overflow:hidden;border:1.5px solid #0E7C66;background:#EFE9D8;margin-top:4px}
+.mapbox .leaflet-control-attribution{font-size:9px}
+.mpin{position:absolute;left:50%;top:50%;transform:translate(-50%,-100%);font-size:30px;line-height:1;z-index:900;pointer-events:none;filter:drop-shadow(0 2px 2px rgba(0,0,0,.4))}
+.mdot{position:absolute;left:50%;top:50%;width:6px;height:6px;margin:-3px 0 0 -3px;border-radius:3px;background:#0A2540;z-index:899;pointer-events:none}
+.mtog{position:absolute;left:8px;top:8px;z-index:1000;display:flex;background:#fff;border-radius:12px;padding:2px;box-shadow:0 1px 4px rgba(0,0,0,.3)}
+.mtog button{border:0;background:none;padding:6px 12px;font:inherit;font-size:11px;font-weight:700;border-radius:10px;color:#0A2540}.mtog button.on{background:#0A2540;color:#fff}
+.mrc{position:absolute;right:8px;top:8px;z-index:1000;width:36px;height:36px;border-radius:18px;border:0;background:#fff;font-size:17px;color:#0A2540;box-shadow:0 1px 4px rgba(0,0,0,.3)}
+.mhint{position:absolute;left:0;right:0;bottom:0;z-index:1000;padding:5px 8px;background:rgba(10,37,64,.78);color:#fff;font-size:11px;text-align:center;pointer-events:none}
+.mapbox .leaflet-control-attribution{margin-bottom:22px}
+.mcoord{margin-top:8px}
+.donut.sm{width:18px;height:18px;border-width:3px;flex:none}
+.mfind{display:flex;align-items:center;gap:10px;margin:0 0 8px;padding:9px 12px;border-radius:12px;background:#DDF1E8;font-size:12px}
+.mslow{margin:0 0 8px;padding:10px 12px;border-radius:12px;background:#FFF3C9;color:#6B4E00;font-size:12px;line-height:1.5}

@@ -28,13 +28,21 @@
     return fetch(B + ':runQuery?key=' + K, { method: 'POST', headers: H, body: JSON.stringify({ structuredQuery: sq }) }).then(ok)
       .then(function (a) { return a.filter(function (x) { return x.document; }).map(function (x) { return row(x.document); }); });
   }
-  var MIRRORS = ['https://overpass-api.de/api/interpreter', 'https://overpass.kumi.systems/api/interpreter'];
+  var MIRRORS = ['https://overpass-api.de/api/interpreter', 'https://overpass.kumi.systems/api/interpreter', 'https://overpass.private.coffee/api/interpreter'];
+  function raceOsm(q) { // tanya semua pelayan serentak, guna yang pertama menjawab; henti selepas 12 saat
+    return new Promise(function (res, rej) {
+      var left = MIRRORS.length, done = false;
+      var tm = setTimeout(function () { if (!done) { done = true; rej(new Error('timeout')); } }, 12000);
+      MIRRORS.forEach(function (m) {
+        fetch(m + '?data=' + encodeURIComponent(q)).then(ok).then(function (j) {
+          if (!done) { done = true; clearTimeout(tm); res(j); }
+        }).catch(function (e) { if (--left === 0 && !done) { done = true; clearTimeout(tm); rej(e); } });
+      });
+    });
+  }
   function osm(lat, lng, rad) {
-    var q = '[out:json][timeout:20];(nwr["amenity"="place_of_worship"]["religion"="muslim"](around:' + rad + ',' + lat + ',' + lng + '););out center tags 150;';
-    function tryAt(i) {
-      return fetch(MIRRORS[i] + '?data=' + encodeURIComponent(q)).then(ok).catch(function (e) { if (i + 1 < MIRRORS.length) return tryAt(i + 1); throw e; });
-    }
-    return tryAt(0).then(function (j) {
+    var q = '[out:json][timeout:10];(nwr["amenity"="place_of_worship"]["religion"="muslim"](around:' + rad + ',' + lat + ',' + lng + '););out center tags 150;';
+    return raceOsm(q).then(function (j) {
       return (j.elements || []).map(function (e) {
         var t = e.tags || {}, la = e.lat != null ? e.lat : e.center && e.center.lat, ln = e.lon != null ? e.lon : e.center && e.center.lon;
         var n = t.name || t['name:ms'] || t['name:en'] || '';

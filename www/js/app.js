@@ -2,8 +2,8 @@
 (function () {
   'use strict';
   var L = window.IstiLogic, I18N = window.ISTI_I18N, ZONES = window.ISTI_ZONES, ZPTS = window.ISTI_ZONEPTS || [];
-  var APP_VERSION = '0.10.5';
-  var APP_DATE = '19 Nov 2026';
+  var APP_VERSION = '0.10.6';
+  var APP_DATE = '20 Nov 2026';
   var params = new URLSearchParams(location.search);
   var Cap = window.Capacitor;
   var isNative = !!(Cap && Cap.isNativePlatform && Cap.isNativePlatform());
@@ -279,19 +279,18 @@
         rows += '<div class="row later free"><div class="rt sm">' + u('bila') + '</div><div><div class="rn">' + tx.n + '</div><div class="rs">' + tx.s + '</div></div><span></span></div>';
       });
     }
-    var tz = zToday(), hi = dayIndex(today) % F.hadis.length, hd = F.hadis[hi], hk = S.lang === 'en' ? 1 : 0;
+    var tz = zToday();
     var cards = '<div class="tcards"><button class="tc tz" data-act="tozikir"><span class="tcl">' + tt('ZIKIR HARI INI', 'DHIKR OF THE DAY') + '</span><span class="tca" lang="ar" dir="rtl">' + esc(tz.ar) + '</span><span class="tcs">' + esc(tz.n) + '</span></button>' +
-      '<button class="tc th" data-go="hadis"><span class="tcl">' + tt('HADIS HARI INI', 'HADITH OF THE DAY') + ' · ' + (hi + 1) + '</span><span class="tct">' + esc(hd[hk]) + '</span><span class="tcs">' + esc(hd[2 + hk]) + '</span></button></div>';
+      '</div>';
     return hdr + hero + cards + '<div class="chips" role="group" aria-label="Tapis">' + chips + '</div><div class="list" id="list">' + tar + rows + '</div>';
   }
 
   function viewLagi() {
-    var soon = [['dua', 'doaQuran', ICON.book], ['azn', 'azan', ICON.speaker], ['zkt', 'zakat', ICON.plus], ['haj', 'haji', ICON.doc]];
+    var soon = [['had', 'hadisHari', ICON.doc], ['dua', 'doaQuran', ICON.book], ['azn', 'azan', ICON.speaker], ['zkt', 'zakat', ICON.plus], ['haj', 'haji', ICON.doc]];
     return '<header class="banner plain">' + ICON.star + '<div class="pt">' + u('lagi') + '</div><div class="ps">' + u('lagiSub') + '</div></header>' +
       '<main class="scroll"><div class="grid">' +
       '<button class="tile" data-go="qiam">' + ICON.moon + u('qiam') + '</button>' +
       '<button class="tile" data-go="kiblat">' + ICON.compass + u('kiblat') + '</button>' +
-      '<button class="tile" data-go="hadis">' + ICON.doc + u('hadisHari') + '</button>' +
       '<button class="tile" data-go="pss">' + ICON.moon.replace('#7A5C12', '#9A8F6E') + u('puasaSunat') + '</button>' +
       '<button class="tile" data-go="khatam">' + ICON.book + u('khatam') + '</button>' +
       '<button class="tile" data-go="umr">' + ICON.doc + u('umrah') + '</button>' +
@@ -796,8 +795,8 @@
       masuk: tt('MASUK WAKTU', 'PRAYER TIME'), waktu: tt('WAKTU', 'TIME'), zikirHari: tt('ZIKIR HARI INI', 'DHIKR OF THE DAY'), hadisHari: tt('HADIS HARI INI', 'HADITH OF THE DAY'),
       subuh: t.items.subuh[0], syuruk: t.ui.syuruk, zohor: t.items.zohor[0], asar: t.items.asar[0], maghrib: t.items.maghrib[0], isyak: t.items.isyak[0]
     };
-    var zc = zCur(), tz = zToday(), hi = dayIndex(today) % F.hadis.length, hd = F.hadis[hi], hk = S.lang === 'en' ? 1 : 0;
-    WGT.sync({ data: JSON.stringify({ zone: zoneShort(S.zone), days: days, labels: labels, zk: { ar: tz.ar, n: tz.n }, hd: { i: hi + 1, t: hd[hk], s: hd[2 + hk] } }), zid: zc.id, zn: zc.n, zt: zTarget(zc), zc: Z.counts[zc.id] || 0 }).catch(function () { /* abaikan */ });
+    var zc = zCur(), tz = zToday();
+    WGT.sync({ data: JSON.stringify({ zone: zoneShort(S.zone), days: days, labels: labels, zk: { ar: tz.ar, n: tz.n } }), zid: zc.id, zn: zc.n, zt: zTarget(zc), zc: Z.counts[zc.id] || 0 }).catch(function () { /* abaikan */ });
   }
   function pullOpen() {
     if (!WGT || !WGT.getOpen) return Promise.resolve();
@@ -807,7 +806,7 @@
       if (o === 'zone') { if (screen !== 'utama') go('utama', false); return autoZone(true); }
       if (o === 'kiblat') return go('kiblat', true);
       if (o === 'zikir') { Z.sel = zToday().id; zSave(); return go('zikir', false); }
-      if (o === 'hadis') return go('hadis', true);
+      if (o === 'hadis') return go('utama', true);
     }).catch(function () { /* abaikan */ });
   }
   function pullZikir() {
@@ -860,6 +859,11 @@
     if (m1 && mScreen === screen && mTop) m1.scrollTop = mTop; // kekal di tempat yang sama selepas klik
     renderedScreen = screen;
     document.documentElement.lang = S.lang === 'en' ? 'en' : 'ms';
+    if (screen === 'mas' && MS.form && !MS.nomap) {
+      var mh = document.getElementById('mmaph');
+      if (mh && MAPX.map && MAPX.el) { mh.replaceWith(MAPX.el); MAPX.map.invalidateSize(); }
+      else if (mh && !MAPX.map && !MAPX.opening) { MAPX.opening = true; mapOpen().then(function () { MAPX.opening = false; if (MS.floc) mapCoordsUpdate(); }); }
+    } else if (MAPX.map) mapClose();
     if (screen === 'kiblat') { kbStart(); kbUpdate(); } else kbStop();
     if (screen === 'tetapan' && S.tahMode === 'fixed') setupWheel();
     widgetSync();
@@ -1116,7 +1120,7 @@
       '<div class="note" style="margin:12px 16px 0;font-size:12px;line-height:1.6;text-align:center">' + tt('Ganjaran sebenar datang daripada Allah. Mata ini hanya penanda supaya kita istiqamah beribadat.', 'Reward truly comes from Allah. These points are only a marker to stay steadfast (istiqamah) in worship.') + '</div></main>';
   }
   /* ---------- Masjid & Surau, Buku Pilihan, Cadangan (dalam talian) ---------- */
-  var MS = { tab: 'near', list: null, busy: false, refreshing: false, err: '', ts: 0, form: false, fn: '', ft: 'masjid', floc: null, facc: null, fstep: 10, fpaste: false, pl: '', sending: false, sent: false };
+  var MS = { tab: 'near', list: null, busy: false, refreshing: false, err: '', ts: 0, form: false, fn: '', ft: 'masjid', floc: null, facc: null, gps: null, nomap: false, slow: false, fpaste: false, pl: '', sending: false, sent: false };
   var MFAV = load('isti.masfav', {});
   var BK = { list: null, busy: false, err: '' };
   var CD = { from: 'tentang', kind: 'ciri', msg: '', sending: false, sent: false, err: '' };
@@ -1131,9 +1135,9 @@
       }, function () { res(sv); }, { enableHighAccuracy: false, timeout: 12000, maximumAge: 300000 });
     });
   }
-  var MAS_RAD = [2500, 8000, 20000];
+  var MAS_RAD = [6000, 20000];
   function osmNear(loc, i) {
-    return ISTI_NET.osm(loc.lat, loc.lng, MAS_RAD[i]).then(function (r) { return (r.length >= 10 || i + 1 >= MAS_RAD.length) ? r : osmNear(loc, i + 1); });
+    return ISTI_NET.osm(loc.lat, loc.lng, MAS_RAD[i]).then(function (r) { return (r.length >= 10 || i + 1 >= MAS_RAD.length) ? r : osmNear(loc, i + 1).catch(function () { return r; }); });
   }
   function masLoad(force) {
     if (MS.busy || MS.refreshing || !window.ISTI_NET) return;
@@ -1151,25 +1155,39 @@
   }
   function masFetch(silent) {
     if (silent) MS.refreshing = true; else MS.busy = true;
-    MS.err = ''; if (!silent) render();
-    return getPos().then(function (loc) {
+    MS.err = ''; MS.slow = false; if (!silent) render();
+    var sv = load('isti.loc', null), cache = load('isti.mas', null), gp = getPos(), used = null;
+    return (sv ? Promise.resolve(sv) : gp).then(function (loc) {
       if (!loc) { if (!silent) MS.err = tt('Lokasi tidak diperoleh. Hidupkan lokasi dan cuba lagi.', 'Location unavailable. Turn on location and try again.'); return; }
-      return Promise.all([
-        ISTI_NET.query('masjid', 'status', 'approved', 500).catch(function () { return []; }),
-        osmNear(loc, 0).catch(function () { return null; })
-      ]).then(function (r) {
-        var fs = r[0].map(function (m) { return { id: 'f' + m.id, n: m.n, t: m.t, lat: m.lat, lng: m.lng, ver: true }; });
-        if (r[1] === null && !fs.length) throw new Error('net');
-        var os = (r[1] || []).filter(function (o) {
-          return !fs.some(function (f) { return ISTI_NET.km(f.lat, f.lng, o.lat, o.lng) < 0.08; });
-        });
-        var all = fs.concat(os).map(function (m) { m.d = ISTI_NET.km(loc.lat, loc.lng, m.lat, m.lng); return m; })
-          .filter(function (m) { return m.d < 25; }).sort(function (a, b) { return a.d - b.d; }).slice(0, 40);
-        MS.loc = loc; MS.list = all; MS.ts = Date.now();
-        save('isti.mas', { ts: MS.ts, list: all, loc: loc });
+      used = loc;
+      var withD = function (m) { m.d = ISTI_NET.km(loc.lat, loc.lng, m.lat, m.lng); return m; };
+      var fsRows = [];
+      var fsP = ISTI_NET.query('masjid', 'status', 'approved', 500).catch(function () { return []; }).then(function (r) {
+        fsRows = r.map(function (m) { return { id: 'f' + m.id, n: m.n, t: m.t, lat: m.lat, lng: m.lng, ver: true }; });
+        if (!MS.list || !MS.list.length) { // tunjuk yang disahkan dahulu
+          var pl = fsRows.map(withD).filter(function (m) { return m.d < 25; }).sort(function (a, b) { return a.d - b.d; });
+          if (pl.length) { MS.loc = loc; MS.list = pl; MS.busy = false; MS.refreshing = true; render(); }
+        }
+        return r;
       });
-    }).catch(function () { if (!silent) MS.err = tt('Tidak dapat memuat senarai. Semak sambungan internet.', 'Could not load the list. Check your internet connection.'); })
-      .then(function () { MS.busy = false; MS.refreshing = false; render(); });
+      return Promise.all([fsP, osmNear(loc, 0).catch(function () { return null; })]).then(function (r) {
+        var osmRows = r[1];
+        if (osmRows === null) {
+          MS.slow = true;
+          var old = cache && cache.list && cache.loc && ISTI_NET.km(cache.loc.lat, cache.loc.lng, loc.lat, loc.lng) < 3 ? cache.list.filter(function (m) { return !m.ver; }) : [];
+          osmRows = old;
+          if (!fsRows.length && !old.length) throw new Error('net');
+        }
+        var os = osmRows.filter(function (o) { return !fsRows.some(function (f) { return ISTI_NET.km(f.lat, f.lng, o.lat, o.lng) < 0.08; }); });
+        var all = fsRows.concat(os).map(withD).filter(function (m) { return m.d < 25; }).sort(function (a, b) { return a.d - b.d; }).slice(0, 40);
+        MS.loc = loc; MS.list = all;
+        if (!MS.slow) { MS.ts = Date.now(); save('isti.mas', { ts: MS.ts, list: all, loc: loc }); }
+      });
+    }).catch(function () { if (!silent && !(MS.list && MS.list.length)) MS.err = tt('Tidak dapat memuat senarai. Semak sambungan internet.', 'Could not load the list. Check your internet connection.'); else MS.slow = true; })
+      .then(function () {
+        MS.busy = false; MS.refreshing = false; render();
+        if (used && sv) gp.then(function (g) { if (g && ISTI_NET.km(g.lat, g.lng, used.lat, used.lng) > 3 && screen === 'mas') masFetch(true); }); // GPS segar jauh dari lokasi lama
+      });
   }
   function masRows() {
     var rows = MS.tab === 'fav' ? Object.keys(MFAV).map(function (k) { var m = MFAV[k]; m.id = k; if (MS.loc) m.d = ISTI_NET.km(MS.loc.lat, MS.loc.lng, m.lat, m.lng); return m; }) : (MS.list || []).slice();
@@ -1196,12 +1214,71 @@
     return null;
   }
   function inMY(l) { return l && l.lat >= 0 && l.lat <= 8 && l.lng >= 99 && l.lng <= 120; }
+  /* Peta dalam borang (Leaflet disimpan dalam app, jubin peta dimuat bila borang dibuka) */
+  var MAPX = { map: null, el: null, circle: null, base: null, sat: false, lib: null };
+  function loadLib() {
+    if (window.L && window.L.map) return Promise.resolve();
+    if (MAPX.lib) return MAPX.lib;
+    MAPX.lib = new Promise(function (res, rej) {
+      var c = document.createElement('link'); c.rel = 'stylesheet'; c.href = 'lib/leaflet.css'; document.head.appendChild(c);
+      var s = document.createElement('script'); s.src = 'lib/leaflet.js'; s.onload = res; s.onerror = function () { MAPX.lib = null; rej(new Error('lib')); }; document.head.appendChild(s);
+    });
+    return MAPX.lib;
+  }
+  function mapLayer(sat) {
+    return sat ? window.L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19, attribution: 'Esri' })
+      : window.L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' });
+  }
+  function mapCoordsUpdate() {
+    var t = document.getElementById('mlt'); if (t && MS.floc) t.textContent = '📍 ' + MS.floc.lat.toFixed(5) + ', ' + MS.floc.lng.toFixed(5);
+    var g = document.getElementById('mgm'); if (g && MS.floc) { g.removeAttribute('aria-disabled'); g.href = 'https://www.google.com/maps/search/?api=1&query=' + MS.floc.lat + ',' + MS.floc.lng; }
+  }
+  function mapOpen() {
+    mapClose(); MAPX.sat = false;
+    return loadLib().then(function () {
+      if (!MS.form || MAPX.map) return;
+      var el = document.createElement('div'); el.className = 'mapbox';
+      var last = MS.floc || load('isti.loc', null);
+      MAPX.el = el;
+      var host = document.getElementById('mmaph'); if (host) host.replaceWith(el); else return;
+      var map = MAPX.map = window.L.map(el, { zoomControl: false, attributionControl: false, center: last ? [last.lat, last.lng] : [4.2, 102.2], zoom: last ? 17 : 6 });
+      window.L.control.attribution({ prefix: false }).addTo(map);
+      MAPX.base = mapLayer(false).addTo(map);
+      map.on('move', function () { var c = map.getCenter(); MS.floc = { lat: c.lat, lng: c.lng }; mapCoordsUpdate(); });
+      mapHud(el);
+      setTimeout(function () { map.invalidateSize(); }, 50);
+    }).catch(function () { MS.nomap = true; render(); });
+  }
+  function mapHud(el) {
+    var pin = document.createElement('div'); pin.className = 'mpin'; pin.textContent = '📍'; el.appendChild(pin);
+    var dot = document.createElement('div'); dot.className = 'mdot'; el.appendChild(dot);
+    var tg = document.createElement('div'); tg.className = 'mtog'; tg.innerHTML = '<button data-mm="map" class="on">' + tt('Peta', 'Map') + '</button><button data-mm="sat">' + tt('Satelit', 'Satellite') + '</button>'; el.appendChild(tg);
+    var rc = document.createElement('button'); rc.className = 'mrc'; rc.setAttribute('aria-label', tt('Lokasi saya', 'My location')); rc.textContent = '◎'; rc.setAttribute('data-mm', 'me'); el.appendChild(rc);
+    var hn = document.createElement('div'); hn.className = 'mhint'; hn.textContent = tt('Seret peta sehingga pin tepat di bangunan', 'Drag the map until the pin is exactly on the building'); el.appendChild(hn);
+    [tg, rc].forEach(function (x) { window.L.DomEvent.disableClickPropagation(x); });
+    tg.addEventListener('click', function (e) {
+      var b = e.target.closest('button'); if (!b || !MAPX.map) return;
+      var sat = b.getAttribute('data-mm') === 'sat'; if (sat === MAPX.sat) return;
+      MAPX.sat = sat; MAPX.map.removeLayer(MAPX.base); MAPX.base = mapLayer(sat).addTo(MAPX.map); MAPX.base.bringToBack();
+      Array.prototype.forEach.call(tg.children, function (c) { c.classList.toggle('on', c === b); });
+    });
+    rc.addEventListener('click', function () { if (MS.gps && MAPX.map) MAPX.map.setView([MS.gps.lat, MS.gps.lng], 18); else formLoc(); });
+  }
+  function mapClose() { if (MAPX.map) { try { MAPX.map.remove(); } catch (e) { /* abaikan */ } } MAPX.map = null; MAPX.el = null; MAPX.circle = null; }
+  function mapGoto(l, acc) {
+    MS.gps = acc != null ? l : MS.gps;
+    if (MAPX.map) {
+      MAPX.map.setView([l.lat, l.lng], 18);
+      if (MAPX.circle) { MAPX.map.removeLayer(MAPX.circle); MAPX.circle = null; }
+      if (acc > 0) MAPX.circle = window.L.circle([l.lat, l.lng], { radius: acc, color: '#0E7C66', weight: 1.5, fillOpacity: .12, interactive: false }).addTo(MAPX.map);
+    } else { MS.floc = l; render(); }
+  }
   function formLoc() {
-    if (!navigator.geolocation) return;
+    if (!navigator.geolocation) { MS.facc = -1; return render(); }
     navigator.geolocation.getCurrentPosition(function (p) {
-      if (!MS.form || MS.floc) return;
-      MS.floc = { lat: p.coords.latitude, lng: p.coords.longitude }; MS.facc = Math.round(p.coords.accuracy || 0); render();
-    }, function () { if (MS.form && !MS.floc) { MS.facc = -1; render(); } }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 30000 });
+      if (!MS.form) return;
+      MS.facc = Math.round(p.coords.accuracy || 0); mapGoto({ lat: p.coords.latitude, lng: p.coords.longitude }, MS.facc); MS.nogps = false; mapCoordsUpdate();
+    }, function () { if (MS.form && !MS.floc) { MS.facc = -1; MS.nogps = true; render(); } }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 30000 });
   }
   function viewMasjid() {
     var chip = function (k, l) { return '<button class="chip' + (MS.tab === k ? ' on' : '') + '" data-act="mtab" data-t="' + k + '">' + l + '</button>'; };
@@ -1214,17 +1291,16 @@
     else if (MS.form) sheet = '<div class="sheetbg" data-act="madd"></div><div class="sheet"><div class="grab"></div><div class="lbl gold">' + tt('TAMBAH MASJID ATAU SURAU', 'ADD A MOSQUE OR SURAU') + '</div>' +
       '<span class="lbl" style="margin-top:10px">' + tt('NAMA', 'NAME') + '</span><input id="mfn" class="inp cin" maxlength="80" value="' + esc(MS.fn) + '" placeholder="' + tt('Contoh: Surau Taman Maju', 'e.g. Surau Taman Maju') + '">' +
       '<div class="seg" style="margin-top:10px"><button class="' + (MS.ft === 'masjid' ? 'on' : '') + '" data-act="mtype" data-t="masjid">' + tt('Masjid', 'Mosque') + '</button><button class="' + (MS.ft === 'surau' ? 'on' : '') + '" data-act="mtype" data-t="surau">Surau</button></div>' +
-      '<span class="lbl" style="margin-top:10px">' + tt('LOKASI', 'LOCATION') + '</span>' + (MS.floc ?
-        '<div class="mloc"><div class="mlt">📍 ' + MS.floc.lat.toFixed(5) + ', ' + MS.floc.lng.toFixed(5) + '</div>' + (MS.facc > 0 ? '<div class="note" style="margin:2px 0 0">' + tt('Ketepatan kira-kira ' + MS.facc + ' m. Kalau anda di tepi bangunan, geser kedudukan:', 'Accuracy about ' + MS.facc + ' m. If you are beside the building, nudge the position:') + '</div>' : '<div class="note" style="margin:2px 0 0">' + tt('Geser kedudukan jika perlu:', 'Nudge the position if needed:') + '</div>') +
-        '<div class="mpad"><span></span><button data-act="mnudge" data-d="n">↑</button><span></span><button data-act="mnudge" data-d="w">←</button><button class="stp" data-act="mstep">' + MS.fstep + ' m</button><button data-act="mnudge" data-d="e">→</button><span></span><button data-act="mnudge" data-d="s">↓</button><span></span></div>' +
-        '<div class="note" style="margin:6px 0 0;text-align:center">' + tt('Setiap tekan geser ' + MS.fstep + ' m. Tekan nombor untuk tukar langkah.', 'Each press moves ' + MS.fstep + ' m. Tap the number to change the step.') + '</div></div>'
-        : '<div class="mloc"><div class="note" style="margin:0">' + (MS.facc === -1 ? tt('Lokasi tidak diperoleh. Tampal pautan atau koordinat di bawah.', 'Location unavailable. Paste a link or coordinates below.') : tt('Mengesan lokasi anda…', 'Detecting your location…')) + '</div></div>') +
-      '<div class="mbtns"><a class="btn ghost" target="_blank" rel="noopener" href="' + (MS.floc ? 'https://www.google.com/maps/search/?api=1&query=' + MS.floc.lat + ',' + MS.floc.lng : '#') + '"' + (MS.floc ? '' : ' aria-disabled="true"') + '>' + tt('Semak di Google Maps', 'Check in Google Maps') + '</a><button class="btn ghost" data-act="mpaste">' + tt('Tampal pautan / koordinat', 'Paste link / coordinates') + '</button></div>' +
+      '<span class="lbl" style="margin-top:10px">' + tt('LOKASI', 'LOCATION') + '</span>' + (MS.nomap ? '<div class="mloc"><div class="note" style="margin:0">' + tt('Peta tidak dapat dimuat. Anda masih boleh tampal pautan atau koordinat di bawah.', 'The map could not load. You can still paste a link or coordinates below.') + '</div></div>' : '<div id="mmaph" class="mapbox"><div class="spinw" style="margin:70px 0"><div class="donut"></div></div></div>') +
+      '<div class="mcoord"><div class="mlt" id="mlt">' + (MS.floc ? '📍 ' + MS.floc.lat.toFixed(5) + ', ' + MS.floc.lng.toFixed(5) : (MS.facc === -1 ? tt('Lokasi tidak diperoleh. Seret peta atau tampal pautan.', 'Location unavailable. Drag the map or paste a link.') : tt('Mengesan lokasi anda…', 'Detecting your location…'))) + '</div>' + (MS.facc > 0 ? '<div class="note" style="margin:2px 0 0">' + tt('Ketepatan GPS kira-kira ' + MS.facc + ' m (bulatan hijau). Seret peta jika perlu.', 'GPS accuracy about ' + MS.facc + ' m (green circle). Drag the map if needed.') + '</div>' : '') + '</div>' +
+      '<div class="mbtns"><a id="mgm" class="btn ghost" target="_blank" rel="noopener" href="' + (MS.floc ? 'https://www.google.com/maps/search/?api=1&query=' + MS.floc.lat + ',' + MS.floc.lng : '#') + '"' + (MS.floc ? '' : ' aria-disabled="true"') + '>' + tt('Semak di Google Maps', 'Check in Google Maps') + '</a><button class="btn ghost" data-act="mpaste">' + tt('Tampal pautan / koordinat', 'Paste link / coordinates') + '</button></div>' +
       (MS.fpaste ? '<input id="mpl" class="inp cin" value="' + esc(MS.pl) + '" placeholder="' + tt('Pautan Google Maps atau 4.4721, 101.0452', 'Google Maps link or 4.4721, 101.0452') + '"><button class="btn wide ghost" data-act="mparse" style="margin-top:8px">' + tt('Guna lokasi ini', 'Use this location') + '</button>' : '') +
       '<div class="note">' + tt('Ia akan disemak admin sebelum dipaparkan kepada orang lain. Tiada nama atau e-mel anda dihantar.', 'It will be reviewed by the admin before others can see it. Your name or email is never sent.') + '</div>' +
       '<button class="btn wide" data-act="msend" style="margin-top:10px"' + (MS.sending ? ' disabled' : '') + '>' + tt('Hantar untuk semakan', 'Submit for review') + '</button></div>';
-    return topbar(u('masjid'), true, '<button class="tbp" data-act="madd" aria-label="' + tt('Tambah masjid atau surau', 'Add a mosque or surau') + '">+</button>') + '<main class="scroll"><div class="note" style="margin:0 4px 8px">' + (MS.tab === 'near' ? tt('10 terdekat dari lokasi anda · disimpan dalam telefon', '10 nearest to you · saved on this phone') + (MS.ts ? ' · ' + new Date(MS.ts).toLocaleDateString(S.lang === 'en' ? 'en-GB' : 'ms-MY', { day: 'numeric', month: 'short' }) : '') + (MS.refreshing ? ' · ' + tt('menyegar…', 'refreshing…') : ' · <button class="lnk" data-act="mrefresh">' + tt('Segar semula', 'Refresh') + '</button>') : tt('Disimpan dalam telefon, nampak walaupun tiada talian', 'Saved on this phone, visible offline')) + '</div>' +
+    return topbar(u('masjid'), true, '<button class="tbp" data-act="madd" aria-label="' + tt('Tambah masjid atau surau', 'Add a mosque or surau') + '">+</button>') + '<main class="scroll"><div class="note" style="margin:0 4px 8px">' + (MS.tab === 'near' ? tt('10 terdekat dari lokasi anda · disimpan dalam telefon', '10 nearest to you · saved on this phone') + (MS.ts ? ' · ' + new Date(MS.ts).toLocaleDateString(S.lang === 'en' ? 'en-GB' : 'ms-MY', { day: 'numeric', month: 'short' }) : '') + (MS.refreshing ? '' : ' · <button class="lnk" data-act="mrefresh">' + tt('Segar semula', 'Refresh') + '</button>') : tt('Disimpan dalam telefon, nampak walaupun tiada talian', 'Saved on this phone, visible offline')) + '</div>' +
       '<div class="chips" style="margin:0 0 8px">' + chip('near', tt('Terdekat', 'Nearest')) + chip('fav', tt('Kegemaran', 'Favourites')) + '</div>' +
+      (MS.refreshing && MS.list && MS.list.length && !MS.busy ? '<div class="mfind"><span class="donut sm"></span><span>' + tt('Mencari tambahan dari OpenStreetMap…', 'Looking for more on OpenStreetMap…') + '</span></div>' : '') +
+      (MS.slow && !MS.refreshing ? '<div class="mslow">' + tt('Pelayan peta lambat. Senarai yang disimpan ditunjukkan.', 'The map server is slow. Showing the saved list.') + ' <button class="lnk" data-act="mrefresh">' + u('cuba') + '</button></div>' : '') +
       body +
       '<div class="note" style="margin:8px 4px 0">' + tt('Data asas daripada OpenStreetMap. Yang bertanda Disahkan telah disemak admin Istiqamah.', 'Base data from OpenStreetMap. Entries marked Verified were checked by the Istiqamah admin.') + '</div></main>' + sheet;
   }
@@ -1416,22 +1492,15 @@
     var a = el.dataset.act;
     if (a === 'mtab') { MS.tab = el.dataset.t; return render(); }
     if (a === 'mrefresh') return masLoad(true);
-    if (a === 'madd') { MS.form = !MS.form && !MS.sent; MS.sent = false; MS.fn = ''; MS.floc = null; MS.facc = null; MS.fstep = 10; MS.fpaste = false; MS.pl = ''; render(); if (MS.form) formLoc(); return; }
+    if (a === 'madd') { MS.form = !MS.form && !MS.sent; MS.sent = false; MS.fn = ''; MS.floc = null; MS.facc = null; MS.gps = null; MS.nomap = false; MS.fpaste = false; MS.pl = ''; mapClose(); render(); if (MS.form) formLoc(); return; }
     if (a === 'mtype') { MS.ft = el.dataset.t; return render(); }
-    if (a === 'mnudge') {
-      if (!MS.floc) return;
-      var dl = MS.fstep / 111320, dn = MS.fstep / (111320 * Math.cos(MS.floc.lat * Math.PI / 180)), d = el.dataset.d;
-      MS.floc = { lat: MS.floc.lat + (d === 'n' ? dl : d === 's' ? -dl : 0), lng: MS.floc.lng + (d === 'e' ? dn : d === 'w' ? -dn : 0) };
-      return render();
-    }
-    if (a === 'mstep') { MS.fstep = MS.fstep === 5 ? 10 : MS.fstep === 10 ? 25 : MS.fstep === 25 ? 50 : 5; return render(); }
     if (a === 'mpaste') { MS.fpaste = !MS.fpaste; return render(); }
     if (a === 'mparse') {
       var pl = parseLoc(MS.pl);
       if (pl && pl.short) return toast(tt('Pautan pendek tidak boleh dibaca. Buka pautan itu dahulu, kemudian salin koordinat atau pautan penuh.', 'Short links cannot be read. Open the link first, then copy the coordinates or the full link.'));
       if (!pl) return toast(tt('Pautan atau koordinat tidak dikenali', 'Link or coordinates not recognised'));
       if (!inMY(pl)) return toast(tt('Lokasi mesti dalam Malaysia', 'Location must be in Malaysia'));
-      MS.floc = pl; MS.facc = null; MS.fpaste = false; return render();
+      MS.facc = null; MS.fpaste = false; mapGoto(pl, null); return render();
     }
     if (a === 'msend') {
       if (MS.fn.trim().length < 3) return toast(tt('Isi nama (sekurang-kurangnya 3 huruf)', 'Enter a name (at least 3 letters)'));
