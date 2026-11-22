@@ -2,8 +2,8 @@
 (function () {
   'use strict';
   var L = window.IstiLogic, I18N = window.ISTI_I18N, ZONES = window.ISTI_ZONES, ZPTS = window.ISTI_ZONEPTS || [];
-  var APP_VERSION = '0.10.7';
-  var APP_DATE = '22 Nov 2026';
+  var APP_VERSION = '0.10.8';
+  var APP_DATE = '23 Nov 2026';
   var params = new URLSearchParams(location.search);
   var Cap = window.Capacitor;
   var isNative = !!(Cap && Cap.isNativePlatform && Cap.isNativePlatform());
@@ -36,7 +36,7 @@
   /* Tanda solat sunat di Utama (reset sebelum Subuh, sama seperti Qiamullail) */
   var SN = Object.assign({ night: '', done: {} }, load('isti.sunat', {}));
   function sSave() { save('isti.sunat', SN); }
-  var SH = { tahajud: 'q_tahajud', witir: 'q_witir' }; // dikongsi dengan Qiamullail
+  var SH = { tahajud: 'q_tahajud', witir: 'q_witir', taubat: 'q_taubat', hajat: 'q_hajat', tasbih: 'q_tasbih' }; // dikongsi dengan Qiamullail
   var SC = { k: null, undo: false };
   function sPts(k) { return k === 'tahajud' ? 15 : ['dhuha', 'isyraq', 'awwabin', 'witir', 'tarawih', 'raya'].indexOf(k) >= 0 ? 10 : 5; }
   function qPts(id) { return id === 'q_tahajud' ? 15 : id === 'q_witir' ? 10 : 5; }
@@ -282,7 +282,7 @@
         var ton = sOn(it.k), fjr = L.mins(td.t.fajr), lock = !ton && (it.m > nowMin || (it.k === 'tahajud' && nowMin >= fjr));
         if (st === 'done') st = 'sdone';
         tkc = ' stk' + (ton ? ' ticked' : '') + (lock ? ' slock' : '');
-        tk = '<div class="stw"><button class="stick' + (ton ? ' on' : '') + '" role="checkbox" aria-checked="' + ton + '" data-act="' + (lock ? 'stlock' : 'stk') + '" data-k="' + it.k + '" aria-label="' + esc(tx.n) + '">' + (ton ? ICON.chk : '') + '</button><span class="stp">' + (lock ? '' : '+' + sPts(it.k)) + '</span></div>';
+        tk = '<div class="stw"><button class="stick' + (ton ? ' on' : '') + '" role="checkbox" aria-checked="' + ton + '" data-act="' + (lock ? 'stlock' : 'stk') + '" data-k="' + it.k + '" aria-label="' + esc(tx.n) + '">' + (ton ? ICON.chk : '') + '</button></div>';
       }
       rows += '<div class="row ' + st + tkc + (it.fardu ? ' fardu' : '') + (it.k === 'raya' ? ' raya' : '') + '" data-k="' + it.k + '">' +
         '<div class="rt">' + it.t + '</div><div><div class="rn">' + tx.n + '</div><div class="rs">' + tx.s + '</div></div>' + tk +
@@ -292,7 +292,9 @@
       rows += '<div class="sec"><div class="sh">' + u('bilaBila') + '</div><div class="sn">' + u('larangan') + '</div></div>';
       L.freeItems(td.flags).forEach(function (k) {
         var tx = itemText(k);
-        rows += '<div class="row later free"><div class="rt sm">' + u('bila') + '</div><div><div class="rn">' + tx.n + '</div><div class="rs">' + tx.s + '</div></div><span></span></div>';
+        var fon = sOn(k);
+        rows += '<div class="row later free stk' + (fon ? ' ticked' : '') + '"><div class="rt sm">' + u('bila') + '</div><div><div class="rn">' + tx.n + '</div><div class="rs">' + tx.s + '</div></div>' +
+          '<div class="stw"><button class="stick' + (fon ? ' on' : '') + '" role="checkbox" aria-checked="' + fon + '" data-act="stk" data-k="' + k + '" aria-label="' + esc(tx.n) + '">' + (fon ? ICON.chk : '') + '</button></div><span></span></div>';
       });
     }
     var tz = zToday();
@@ -302,9 +304,9 @@
     if (SC.k) {
       var sx = itemText(SC.k).n, sp = sPts(SC.k);
       sheet = '<div class="sheetbg" data-act="stno"></div><div class="sheet"><div class="grab"></div><div class="lbl gold">' + (SC.undo ? tt('BATAL TANDA', 'UNDO') : tt('SAHKAN', 'CONFIRM')) + '</div>' +
-        '<div class="sttl">' + (SC.undo ? tt('Batalkan tanda ' + sx + '?', 'Undo ' + sx + '?') : tt('Sudah solat ' + sx + '?', 'Did you pray ' + sx + '?')) + '</div>' +
+        '<div class="sttl">' + (SC.undo ? tt('Batalkan tanda ' + sx + '?', 'Undo ' + sx + '?') : tt('Sudah tunaikan ' + sx + '?', 'Did you perform ' + sx + '?')) + '</div>' +
         '<div class="note" style="margin:4px 0 0">' + (SC.undo ? tt('Mata <b>−' + sp + '</b> akan ditarik balik.', '<b>−' + sp + '</b> points will be taken back.') : tt('Anda akan dapat <b>+' + sp + ' mata</b>.', 'You will get <b>+' + sp + ' points</b>.')) + '</div>' +
-        '<div class="stbtn"><button class="btn ghost" data-act="stno">' + tt('Batal', 'Cancel') + '</button><button class="btn" data-act="stok">' + (SC.undo ? tt('Ya, batalkan', 'Yes, undo') : tt('Ya, sudah solat', 'Yes, I prayed')) + '</button></div></div>';
+        '<div class="stbtn"><button class="btn ghost" data-act="stno">' + tt('Batal', 'Cancel') + '</button><button class="btn" data-act="stok">' + (SC.undo ? tt('Ya, batalkan', 'Yes, undo') : tt('Ya, sudah', 'Yes, done')) + '</button></div></div>';
     }
     return hdr + hero + cards + '<div class="chips" role="group" aria-label="Tapis">' + chips + '</div><div class="list" id="list">' + tar + rows + '</div>' + sheet;
   }
@@ -1138,7 +1140,6 @@
       '<div class="rrow"><div class="rbox"><b>' + tt('BERTURUT-TURUT', 'CURRENT STREAK') + '</b><span>' + r.cur + ' ' + tt('hari', 'days') + (r.cur > 0 ? ' 🔥' : '') + '</span></div><div class="rbox"><b>' + tt('TERPANJANG', 'LONGEST') + '</b><span>' + r.best + ' ' + tt('hari', 'days') + '</span></div></div>' +
       '<div class="card" style="margin-top:10px"><span class="lbl gold" style="margin-bottom:6px">' + tt('MATA 7 HARI LEPAS', 'POINTS, LAST 7 DAYS') + '</span><div class="rbars">' + bars + '</div></div>' +
       '<div class="card"><span class="lbl gold" style="margin-bottom:6px">' + tt('BAGAIMANA MATA DIPEROLEH', 'HOW POINTS ARE EARNED') + '</span>' + pts.map(function (x) { return '<div class="rpt"><span>' + x[en ? 1 : 0] + '</span><b>+' + x[2] + '</b></div>'; }).join('') + '</div>' +
-      '<div class="note" style="margin:6px 4px 0">' + tt('Hari dikira berturut bila ada sekurang-kurangnya satu amalan. Data hanya pada telefon ini. Tiada perbandingan dengan orang lain.', 'A day counts toward the streak when you do at least one deed. Data stays on this phone. There is no comparison with other people.') + '</div>' +
       '<div class="note" style="margin:12px 16px 0;font-size:12px;line-height:1.6;text-align:center">' + tt('Ganjaran sebenar datang daripada Allah. Mata ini hanya penanda supaya kita istiqamah beribadat.', 'Reward truly comes from Allah. These points are only a marker to stay steadfast (istiqamah) in worship.') + '</div>';
   }
   /* ---------- Masjid & Surau, Buku Pilihan, Cadangan (dalam talian) ---------- */

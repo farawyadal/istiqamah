@@ -297,11 +297,11 @@ button{font-family:inherit;cursor:pointer}
 .donut.sm{width:18px;height:18px;border-width:3px;flex:none}
 .mfind{display:flex;align-items:center;gap:10px;margin:0 0 8px;padding:9px 12px;border-radius:12px;background:#DDF1E8;font-size:12px}
 .mslow{margin:0 0 8px;padding:10px 12px;border-radius:12px;background:#FFF3C9;color:#6B4E00;font-size:12px;line-height:1.5}
-.row.stk{grid-template-columns:54px minmax(0,1fr) 46px 44px}
+.row.stk{grid-template-columns:54px minmax(0,1fr) 36px 44px}
 .row.sdone{opacity:1}.row.slock{opacity:.6}.row.ticked{background:#DDF1E8;border-color:#9CD5BF}
 .stw{display:flex;flex-direction:column;align-items:center;gap:1px}
-.stick{width:30px;height:30px;border-radius:15px;border:2px solid #0E7C66;background:#fff;display:flex;align-items:center;justify-content:center;padding:0;color:#fff;box-sizing:border-box}
-.stick.on{background:#0E7C66}.stick svg{width:16px;height:16px}
+.stick{width:22px;height:22px;border-radius:11px;border:2px solid #0E7C66;background:#fff;display:flex;align-items:center;justify-content:center;padding:0;color:#fff;box-sizing:border-box}
+.stick.on{background:#0E7C66}.stick svg{width:13px;height:13px}
 .row.slock .stick{border:2px dashed #CFC6A8;background:transparent}
 .stp{font-size:10px;font-weight:700;color:#0E7C66;min-height:12px}
 .sttl{font-size:19px;font-weight:700;margin-top:4px}
