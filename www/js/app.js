@@ -2,8 +2,8 @@
 (function () {
   'use strict';
   var L = window.IstiLogic, I18N = window.ISTI_I18N, ZONES = window.ISTI_ZONES, ZPTS = window.ISTI_ZONEPTS || [];
-  var APP_VERSION = '0.10.6';
-  var APP_DATE = '20 Nov 2026';
+  var APP_VERSION = '0.10.7';
+  var APP_DATE = '22 Nov 2026';
   var params = new URLSearchParams(location.search);
   var Cap = window.Capacitor;
   var isNative = !!(Cap && Cap.isNativePlatform && Cap.isNativePlatform());
@@ -33,6 +33,14 @@
   var QDEF = ['q_taubat', 'q_tahajud', 'q_hajat', 'q_tasbih', 'q_witir', 'q_zikir', 'q_doa'];
   var Q = Object.assign({ items: QDEF.map(function (k) { return { id: k, key: k }; }), night: '', done: [] }, load('isti.qiam', {}));
   function qSave() { save('isti.qiam', Q); }
+  /* Tanda solat sunat di Utama (reset sebelum Subuh, sama seperti Qiamullail) */
+  var SN = Object.assign({ night: '', done: {} }, load('isti.sunat', {}));
+  function sSave() { save('isti.sunat', SN); }
+  var SH = { tahajud: 'q_tahajud', witir: 'q_witir' }; // dikongsi dengan Qiamullail
+  var SC = { k: null, undo: false };
+  function sPts(k) { return k === 'tahajud' ? 15 : ['dhuha', 'isyraq', 'awwabin', 'witir', 'tarawih', 'raya'].indexOf(k) >= 0 ? 10 : 5; }
+  function qPts(id) { return id === 'q_tahajud' ? 15 : id === 'q_witir' ? 10 : 5; }
+  function sOn(k) { return SH[k] ? Q.done.indexOf(SH[k]) >= 0 : !!SN.done[k]; }
   var SBELL_DEF = { aidilfitri: 1, aidiladha: 1, awalRamadan: 1 };
   function sbellOn(k) { return S.sbells && S.sbells[k] !== undefined ? !!S.sbells[k] : !!SBELL_DEF[k]; }
 
@@ -262,14 +270,22 @@
     }
 
     // baris
+    sSync(); qSync();
     var rows = '';
     td.items.forEach(function (it) {
       if (filter === 'fardu' && !it.fardu) return;
       if (filter === 'sunat' && it.fardu) return;
       var tx = itemText(it.k), on = L.bellOn(S.bells, it.k);
       var st = it.m < nowMin ? 'done' : (next && next.dayOffset === 0 && next.item === it ? 'next' : 'later');
-      rows += '<div class="row ' + st + (it.fardu ? ' fardu' : '') + (it.k === 'raya' ? ' raya' : '') + '" data-k="' + it.k + '">' +
-        '<div class="rt">' + it.t + '</div><div><div class="rn">' + tx.n + '</div><div class="rs">' + tx.s + '</div></div>' +
+      var tk = '', tkc = '';
+      if (!it.fardu) {
+        var ton = sOn(it.k), fjr = L.mins(td.t.fajr), lock = !ton && (it.m > nowMin || (it.k === 'tahajud' && nowMin >= fjr));
+        if (st === 'done') st = 'sdone';
+        tkc = ' stk' + (ton ? ' ticked' : '') + (lock ? ' slock' : '');
+        tk = '<div class="stw"><button class="stick' + (ton ? ' on' : '') + '" role="checkbox" aria-checked="' + ton + '" data-act="' + (lock ? 'stlock' : 'stk') + '" data-k="' + it.k + '" aria-label="' + esc(tx.n) + '">' + (ton ? ICON.chk : '') + '</button><span class="stp">' + (lock ? '' : '+' + sPts(it.k)) + '</span></div>';
+      }
+      rows += '<div class="row ' + st + tkc + (it.fardu ? ' fardu' : '') + (it.k === 'raya' ? ' raya' : '') + '" data-k="' + it.k + '">' +
+        '<div class="rt">' + it.t + '</div><div><div class="rn">' + tx.n + '</div><div class="rs">' + tx.s + '</div></div>' + tk +
         '<button class="bell' + (on ? ' on' : '') + '" data-bell="' + it.k + '" aria-pressed="' + on + '" aria-label="' + u('notif') + tx.n + '">' + ICON.bell(on) + '</button></div>';
     });
     if (filter !== 'fardu') {
@@ -282,11 +298,18 @@
     var tz = zToday();
     var cards = '<div class="tcards"><button class="tc tz" data-act="tozikir"><span class="tcl">' + tt('ZIKIR HARI INI', 'DHIKR OF THE DAY') + '</span><span class="tca" lang="ar" dir="rtl">' + esc(tz.ar) + '</span><span class="tcs">' + esc(tz.n) + '</span></button>' +
       '</div>';
-    return hdr + hero + cards + '<div class="chips" role="group" aria-label="Tapis">' + chips + '</div><div class="list" id="list">' + tar + rows + '</div>';
+    var sheet = '';
+    if (SC.k) {
+      var sx = itemText(SC.k).n, sp = sPts(SC.k);
+      sheet = '<div class="sheetbg" data-act="stno"></div><div class="sheet"><div class="grab"></div><div class="lbl gold">' + (SC.undo ? tt('BATAL TANDA', 'UNDO') : tt('SAHKAN', 'CONFIRM')) + '</div>' +
+        '<div class="sttl">' + (SC.undo ? tt('Batalkan tanda ' + sx + '?', 'Undo ' + sx + '?') : tt('Sudah solat ' + sx + '?', 'Did you pray ' + sx + '?')) + '</div>' +
+        '<div class="note" style="margin:4px 0 0">' + (SC.undo ? tt('Mata <b>−' + sp + '</b> akan ditarik balik.', '<b>−' + sp + '</b> points will be taken back.') : tt('Anda akan dapat <b>+' + sp + ' mata</b>.', 'You will get <b>+' + sp + ' points</b>.')) + '</div>' +
+        '<div class="stbtn"><button class="btn ghost" data-act="stno">' + tt('Batal', 'Cancel') + '</button><button class="btn" data-act="stok">' + (SC.undo ? tt('Ya, batalkan', 'Yes, undo') : tt('Ya, sudah solat', 'Yes, I prayed')) + '</button></div></div>';
+    }
+    return hdr + hero + cards + '<div class="chips" role="group" aria-label="Tapis">' + chips + '</div><div class="list" id="list">' + tar + rows + '</div>' + sheet;
   }
 
   function viewLagi() {
-    var soon = [['had', 'hadisHari', ICON.doc], ['dua', 'doaQuran', ICON.book], ['azn', 'azan', ICON.speaker], ['zkt', 'zakat', ICON.plus], ['haj', 'haji', ICON.doc]];
     return '<header class="banner plain">' + ICON.star + '<div class="pt">' + u('lagi') + '</div><div class="ps">' + u('lagiSub') + '</div></header>' +
       '<main class="scroll"><div class="grid">' +
       '<button class="tile" data-go="qiam">' + ICON.moon + u('qiam') + '</button>' +
@@ -294,15 +317,10 @@
       '<button class="tile" data-go="pss">' + ICON.moon.replace('#7A5C12', '#9A8F6E') + u('puasaSunat') + '</button>' +
       '<button class="tile" data-go="khatam">' + ICON.book + u('khatam') + '</button>' +
       '<button class="tile" data-go="umr">' + ICON.doc + u('umrah') + '</button>' +
-      '<button class="tile" data-go="rnk">' + ICON.bars + u('ranking') + '</button>' +
       '<button class="tile" data-go="mas">' + ICON.mosque.replace('#9A8F6E', '#7A5C12') + u('masjid') + '</button>' +
       '<button class="tile" data-go="buk">' + ICON.book + u('buku') + '</button>' +
       '<button class="tile" data-go="tetapan">' + ICON.gear + u('tetapan') + '</button>' +
-      '<button class="tile" data-go="tentang">' + ICON.info + u('tentang') + '</button></div>' +
-      '<div class="sech" style="display:flex;justify-content:space-between"><span>' + u('akanDatang') + '</span><span style="font-weight:500;letter-spacing:0;color:var(--muted)">' + u('akanDatangNota') + '</span></div>' +
-      '<div class="grid">' + soon.map(function (x) {
-        return '<button class="tile soon" data-act="soon" aria-label="' + esc(u(x[1])) + ', ' + esc(u('tiba')) + '">' + x[2] + '<span>' + u(x[1]) + '</span><span class="sb">' + u('tibaCap') + '</span></button>';
-      }).join('') + '</div></main>';
+      '<button class="tile" data-go="tentang">' + ICON.info + u('tentang') + '</button></div>' + '</main>';
   }
 
   function topbar(title, back, right) {
@@ -598,6 +616,7 @@
     var fajr = td ? L.mins(td.t.fajr) : 355;
     return L.ymd(nm < fajr ? L.addDays(d, -1) : d);
   }
+  function sSync() { var n = nightId(); if (SN.night !== n) { SN.night = n; SN.done = {}; sSave(); } }
   function qSync() { var n = nightId(); if (Q.night !== n) { Q.night = n; Q.done = []; qSave(); } }
   function qName(i) { return i.key ? (T().items[i.key] || [i.key, ''])[0] : i.n; }
   function qSub(i) { return i.key ? (T().items[i.key] || ['', ''])[1] : (i.s || ''); }
@@ -880,6 +899,7 @@
 
   var retTo = null;
   function go(s, push) {
+    if (s === 'rnk') { CT = 'mat'; s = 'cab'; }
     if (['kiblat', 'hadis', 'khatam', 'rnk'].indexOf(s) >= 0) retTo = (screen === 'utama' || screen === 'cab') ? screen : null;
     screen = s;
     if (push && (['zkat', 'hadis', 'khatam', 'cabnew', 'pss', 'umr', 'rnk', 'buk', 'bkd', 'mas', 'cdg'].indexOf(s) >= 0 || s === 'tetapan' || s === 'tentang' || s === 'qiam' || s === 'kiblat')) history.pushState({ s: s }, '');
@@ -977,8 +997,10 @@
     var kup = Math.min(30, K.upTo || 0), kdays = Math.max(1, daysBetween(K.start, today) + 1);
     var kcard = '<button class="card cabc kcab" data-go="khatam"><div class="cabh"><div><div class="kcl">' + tt('KHATAM QURAN', 'QURAN COMPLETION') + '</div><div class="cabn">' + (kup >= 30 ? tt('Khatam ✓', 'Completed ✓') : tt('Hari ke-', 'Day ') + kdays + ' · ' + kup + ' / 30 ' + tt('juzuk', 'juz')) + '</div></div><span class="kchev">›</span></div>' +
       '<div class="bar"><div style="width:' + Math.round(kup / 30 * 100) + '%"></div></div><div class="cabs" style="margin-top:6px">' + tt('Klik untuk buka skrin juzuk', 'Tap to open the juz screen') + '</div></button>';
-    var ri = rankInfo(), rcard = '<button class="card rcab" data-go="rnk"><span class="rcs">★</span><span class="rci"><span class="rcl">' + tt('RANKING SAYA', 'MY RANKING') + '</span><span class="rcv"><b>' + ri.tot.toLocaleString() + '</b> ' + tt('mata', 'points') + ' · ' + LVN[ri.lv][S.lang === 'en' ? 1 : 0] + '</span></span><span class="brx">›</span></button>';
-    return topbar(u('cabaran'), false) + '<main class="scroll">' + rcard + '<div class="sech" style="margin-top:4px">' + tt('CABARAN SAYA', 'MY CHALLENGES') + '</div>' + kcard + mine +
+    var ri = rankInfo(), rcard0 = '<button class="card rcab" data-go="rnk"><span class="rcs">★</span><span class="rci"><span class="rcl">' + tt('RANKING SAYA', 'MY RANKING') + '</span><span class="rcv"><b>' + ri.tot.toLocaleString() + '</b> ' + tt('mata', 'points') + ' · ' + LVN[ri.lv][S.lang === 'en' ? 1 : 0] + '</span></span><span class="brx">›</span></button>';
+    var seg = '<div class="seg" style="margin:0 0 10px"><button class="' + (CT === 'cab' ? 'on' : '') + '" data-act="ctab" data-t="cab">' + tt('Cabaran', 'Challenges') + '</button><button class="' + (CT === 'mat' ? 'on' : '') + '" data-act="ctab" data-t="mat">' + tt('Mata & Tahap', 'Points & Level') + '</button></div>';
+    if (CT === 'mat') return topbar(u('cabaran'), false) + '<main class="scroll">' + seg + rankBody() + '</main>';
+    return topbar(u('cabaran'), false) + '<main class="scroll">' + seg + '<div class="sech" style="margin-top:4px">' + tt('CABARAN SAYA', 'MY CHALLENGES') + '</div>' + kcard + mine +
       '<button class="btn wide ghost" data-go="cabnew" style="margin:6px 0 4px">+ ' + tt('Cipta cabaran sendiri', 'Create your own challenge') + '</button>' +
       '<div class="sech">' + tt('CABARAN SEDIA ADA', 'READY-MADE CHALLENGES') + '</div><div class="card">' + (avail || '<div class="note" style="margin:0">' + tt('Semua sudah dimulakan.', 'All started.') + '</div>') + '</div>' +
       '<div class="note" style="margin:6px 4px 0">' + tt('Papan kedudukan dalam talian belum ada. Kemajuan disimpan pada telefon ini sahaja.', 'There is no online leaderboard yet. Progress is stored on this phone only.') + '</div></main>';
@@ -1102,22 +1124,22 @@
     keys.forEach(function (x) { run = prev && daysBetween(prev, x) === 1 ? run + 1 : 1; if (run > best) best = run; prev = x; });
     return { tot: tot, lv: lv, next: next, pct: pct, cur: cur, best: Math.max(best, cur) };
   }
-  function viewRank() {
+  var CT = 'cab';
+  function rankBody() {
     var r = rankInfo(), en = S.lang === 'en', t0 = now(), days = [], mx = 1;
     for (var i = 6; i >= 0; i--) { var d = L.addDays(t0, -i); days.push({ d: d, v: R.log[L.ymd(d)] || 0 }); }
     days.forEach(function (x) { if (x.v > mx) mx = x.v; });
     var bars = days.map(function (x, i) {
       return '<div class="rbc"><div class="rb' + (i === 6 ? ' td' : '') + '" style="height:' + Math.max(3, Math.round(x.v / mx * 70)) + 'px"></div><span>' + T().ui.hari[x.d.getDay()].slice(0, 3) + '</span></div>';
     }).join('');
-    var pts = [['Zikir capai sasaran', 'Dhikr target reached', 5], ['Tasbih selepas solat selesai', 'Post-prayer tasbih complete', 10], ['Tanda cabaran hari ini', 'Challenge marked today', 10], ['Satu juzuk dibaca', 'One juz read', 10], ['Puasa sunat', 'Sunnah fast', 20], ['Item Qiamullail', 'Qiyam al-Layl item', 5], ['Cabaran selesai', 'Challenge completed', 50]];
-    return topbar(tt('Ranking Saya', 'My Ranking'), true) + '<main class="scroll">' +
-      '<div class="rhero"><div class="rhl">' + tt('TAHAP ', 'LEVEL ') + (r.lv + 1) + ' · ' + LVN[r.lv][en ? 1 : 0].toUpperCase() + '</div><div class="rbig">' + r.tot.toLocaleString() + ' <span>' + tt('mata', 'points') + '</span></div>' +
+    var pts = [['Zikir capai sasaran', 'Dhikr target reached', 5], ['Tasbih selepas solat selesai', 'Post-prayer tasbih complete', 10], ['Tanda cabaran hari ini', 'Challenge marked today', 10], ['Satu juzuk dibaca', 'One juz read', 10], ['Puasa sunat', 'Sunnah fast', 20], ['Solat sunat: rawatib, Tahiyatul Masjid', 'Sunnah prayer: rawatib, Tahiyatul Masjid', 5], ['Dhuha, Isyraq, Awwabin, Witir, Tarawih, Hari Raya', 'Duha, Ishraq, Awwabin, Witr, Tarawih, Eid', 10], ['Solat Tahajud', 'Tahajjud prayer', 15], ['Item Qiamullail lain', 'Other Qiyam al-Layl items', 5], ['Cabaran selesai', 'Challenge completed', 50]];
+    return '<div class="rhero"><div class="rhl">' + tt('TAHAP ', 'LEVEL ') + (r.lv + 1) + ' · ' + LVN[r.lv][en ? 1 : 0].toUpperCase() + '</div><div class="rbig">' + r.tot.toLocaleString() + ' <span>' + tt('mata', 'points') + '</span></div>' +
       '<div class="rpb"><div style="width:' + r.pct + '%"></div></div><div class="rhs">' + (r.next ? tt((r.next - r.tot) + ' mata lagi ke Tahap ' + (r.lv + 2) + ' · ' + LVN[r.lv + 1][0], (r.next - r.tot) + ' points to Level ' + (r.lv + 2) + ' · ' + LVN[r.lv + 1][1]) : tt('Tahap tertinggi dicapai', 'Top level reached')) + '</div></div>' +
       '<div class="rrow"><div class="rbox"><b>' + tt('BERTURUT-TURUT', 'CURRENT STREAK') + '</b><span>' + r.cur + ' ' + tt('hari', 'days') + (r.cur > 0 ? ' 🔥' : '') + '</span></div><div class="rbox"><b>' + tt('TERPANJANG', 'LONGEST') + '</b><span>' + r.best + ' ' + tt('hari', 'days') + '</span></div></div>' +
       '<div class="card" style="margin-top:10px"><span class="lbl gold" style="margin-bottom:6px">' + tt('MATA 7 HARI LEPAS', 'POINTS, LAST 7 DAYS') + '</span><div class="rbars">' + bars + '</div></div>' +
       '<div class="card"><span class="lbl gold" style="margin-bottom:6px">' + tt('BAGAIMANA MATA DIPEROLEH', 'HOW POINTS ARE EARNED') + '</span>' + pts.map(function (x) { return '<div class="rpt"><span>' + x[en ? 1 : 0] + '</span><b>+' + x[2] + '</b></div>'; }).join('') + '</div>' +
-      '<div class="note" style="margin:6px 4px 0">' + tt('Hari dikira berturut bila ada sekurang-kurangnya satu amalan. Data hanya pada telefon ini. Tiada ranking dengan orang lain.', 'A day counts toward the streak when you do at least one deed. Data stays on this phone. There is no ranking against other people.') + '</div>' +
-      '<div class="note" style="margin:12px 16px 0;font-size:12px;line-height:1.6;text-align:center">' + tt('Ganjaran sebenar datang daripada Allah. Mata ini hanya penanda supaya kita istiqamah beribadat.', 'Reward truly comes from Allah. These points are only a marker to stay steadfast (istiqamah) in worship.') + '</div></main>';
+      '<div class="note" style="margin:6px 4px 0">' + tt('Hari dikira berturut bila ada sekurang-kurangnya satu amalan. Data hanya pada telefon ini. Tiada perbandingan dengan orang lain.', 'A day counts toward the streak when you do at least one deed. Data stays on this phone. There is no comparison with other people.') + '</div>' +
+      '<div class="note" style="margin:12px 16px 0;font-size:12px;line-height:1.6;text-align:center">' + tt('Ganjaran sebenar datang daripada Allah. Mata ini hanya penanda supaya kita istiqamah beribadat.', 'Reward truly comes from Allah. These points are only a marker to stay steadfast (istiqamah) in worship.') + '</div>';
   }
   /* ---------- Masjid & Surau, Buku Pilihan, Cadangan (dalam talian) ---------- */
   var MS = { tab: 'near', list: null, busy: false, refreshing: false, err: '', ts: 0, form: false, fn: '', ft: 'masjid', floc: null, facc: null, gps: null, nomap: false, slow: false, fpaste: false, pl: '', sending: false, sent: false };
@@ -1317,7 +1339,7 @@
     var body;
     if (BK.busy) body = spin(tt('Memuatkan senarai buku', 'Loading the book list'));
     else if (BK.err) body = '<div class="card"><div class="note" style="margin:0 0 10px">' + BK.err + '</div><button class="btn wide" data-act="bukrefresh">' + u('cuba') + '</button></div>';
-    else if (!BK.list || !BK.list.length) body = '<div class="bkempty"><div style="font-size:40px">📚</div><div class="bkt">' + tt('Akan datang', 'Coming soon') + '</div><div class="note" style="margin-top:6px">' + tt('Senarai buku agama pilihan akan dipaparkan di sini, insya-Allah.', 'A list of recommended Islamic books will appear here, insha’Allah.') + '</div></div>';
+    else if (!BK.list || !BK.list.length) body = '<div class="bkempty"><div style="font-size:40px">📚</div><div class="bkt">' + tt('Belum ada buku', 'No books yet') + '</div><div class="note" style="margin-top:6px">' + tt('Senarai buku agama pilihan akan dipaparkan di sini.', 'A list of recommended Islamic books will appear here.') + '</div></div>';
     else body = BK.list.map(function (b, ix) {
       var cv = /^https:\/\//i.test(b.kulit || '') ? '<img class="brc" src="' + esc(b.kulit) + '" alt="" loading="lazy" onerror="this.style.visibility=\'hidden\'">' : '<div class="brc"></div>';
       return '<button class="brow" data-bk="' + ix + '">' + cv + '<span class="bri"><span class="brn">' + esc(b.tajuk) + '</span><span class="bra">' + esc(b.penulis) + '</span></span><span class="brx">›</span></button>';
@@ -1476,7 +1498,7 @@
     }
     if (el.dataset.qchk) {
       var qi = Q.done.indexOf(el.dataset.qchk);
-      if (qi >= 0) { Q.done.splice(qi, 1); award(-5); } else { Q.done.push(el.dataset.qchk); award(5); }
+      if (qi >= 0) { Q.done.splice(qi, 1); award(-qPts(el.dataset.qchk)); } else { Q.done.push(el.dataset.qchk); award(qPts(el.dataset.qchk)); }
       qSave(); return render();
     }
     if (el.dataset.qdel) { Q.items = Q.items.filter(function (i) { return i.id !== el.dataset.qdel; }); qSave(); return render(); }
@@ -1490,6 +1512,17 @@
       save('isti.masfav', MFAV); return render();
     }
     var a = el.dataset.act;
+    if (a === 'ctab') { CT = el.dataset.t; return render(); }
+    if (a === 'stlock') return toast(tt('Belum masuk waktu', 'Not yet time'));
+    if (a === 'stk') { SC = { k: el.dataset.k, undo: sOn(el.dataset.k) }; return render(); }
+    if (a === 'stno') { SC = { k: null, undo: false }; return render(); }
+    if (a === 'stok') {
+      var sk = SC.k; if (!sk) return;
+      var p0 = sPts(sk), on0 = sOn(sk);
+      if (SH[sk]) { var ix0 = Q.done.indexOf(SH[sk]); if (on0) Q.done.splice(ix0, 1); else Q.done.push(SH[sk]); qSave(); }
+      else { if (on0) delete SN.done[sk]; else SN.done[sk] = 1; sSave(); }
+      award(on0 ? -p0 : p0); SC = { k: null, undo: false }; return render();
+    }
     if (a === 'mtab') { MS.tab = el.dataset.t; return render(); }
     if (a === 'mrefresh') return masLoad(true);
     if (a === 'madd') { MS.form = !MS.form && !MS.sent; MS.sent = false; MS.fn = ''; MS.floc = null; MS.facc = null; MS.gps = null; MS.nomap = false; MS.fpaste = false; MS.pl = ''; mapClose(); render(); if (MS.form) formLoc(); return; }
