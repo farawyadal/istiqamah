@@ -16,7 +16,7 @@ service cloud.firestore {
         request.resource.data.keys().hasOnly(['n', 't', 'lat', 'lng', 'status', 'ts'])
         && request.resource.data.n is string
         && request.resource.data.n.size() >= 3 && request.resource.data.n.size() <= 80
-        && request.resource.data.t in ['masjid', 'surau']
+        && request.resource.data.t in ['masjid', 'surau', 'pusat']
         && request.resource.data.lat is number
         && request.resource.data.lat >= 0 && request.resource.data.lat <= 8
         && request.resource.data.lng is number

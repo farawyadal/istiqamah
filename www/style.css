@@ -306,3 +306,4 @@ button{font-family:inherit;cursor:pointer}
 .stp{font-size:10px;font-weight:700;color:#0E7C66;min-height:12px}
 .sttl{font-size:19px;font-weight:700;margin-top:4px}
 .stbtn{display:flex;gap:8px;margin-top:14px}.stbtn .btn{flex:1}
+.mtyp button{font-size:13px;padding:0 6px;line-height:1.2}

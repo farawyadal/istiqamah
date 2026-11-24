@@ -2,8 +2,8 @@
 (function () {
   'use strict';
   var L = window.IstiLogic, I18N = window.ISTI_I18N, ZONES = window.ISTI_ZONES, ZPTS = window.ISTI_ZONEPTS || [];
-  var APP_VERSION = '0.10.8';
-  var APP_DATE = '23 Nov 2026';
+  var APP_VERSION = '0.10.9';
+  var APP_DATE = '24 Nov 2026';
   var params = new URLSearchParams(location.search);
   var Cap = window.Capacitor;
   var isNative = !!(Cap && Cap.isNativePlatform && Cap.isNativePlatform());
@@ -1220,7 +1220,7 @@
     return rows.map(function (m) {
       var on = !!MFAV[m.id], ds = m.d == null ? '' : (m.d < 1 ? Math.round(m.d * 1000) + ' m' : m.d.toFixed(1) + ' km');
       return '<div class="mrow"><div class="mi"><div class="mn">' + esc(m.n) + (m.ver ? '<span class="mv">' + tt('DISAHKAN', 'VERIFIED') + '</span>' : '') + '</div>' +
-        '<div class="ms">' + (m.t === 'surau' ? tt('Surau', 'Surau') : tt('Masjid', 'Mosque')) + (ds ? ' · ' + ds : '') + '</div></div>' +
+        '<div class="ms">' + (m.t === 'surau' ? tt('Surau', 'Surau') : m.t === 'pusat' ? tt('Pusat Islam / Musolla', 'Islamic Centre / Musolla') : tt('Masjid', 'Mosque')) + (ds ? ' · ' + ds : '') + '</div></div>' +
         '<a class="mmap" target="_blank" rel="noopener" aria-label="' + tt('Buka peta', 'Open map') + '" href="https://www.google.com/maps/search/?api=1&query=' + m.lat + ',' + m.lng + '">' + ICON.pin + '</a>' +
         '<button class="mstar' + (on ? ' on' : '') + '" data-mfav="' + esc(m.id) + '" aria-label="' + tt('Kegemaran', 'Favourite') + '">' + (on ? '★' : '☆') + '</button></div>';
     }).join('');
@@ -1313,7 +1313,7 @@
     if (MS.sent) sheet = '<div class="sheetbg" data-act="madd"></div><div class="sheet"><div class="grab"></div><div class="lbl gold">' + tt('Terima kasih', 'Thank you') + '</div><div class="note">' + tt('Menunggu pengesahan admin.', 'Waiting for admin approval.') + '</div><button class="btn wide" data-act="madd" style="margin-top:12px">' + tt('Selesai', 'Done') + '</button></div>';
     else if (MS.form) sheet = '<div class="sheetbg" data-act="madd"></div><div class="sheet"><div class="grab"></div><div class="lbl gold">' + tt('TAMBAH MASJID ATAU SURAU', 'ADD A MOSQUE OR SURAU') + '</div>' +
       '<span class="lbl" style="margin-top:10px">' + tt('NAMA', 'NAME') + '</span><input id="mfn" class="inp cin" maxlength="80" value="' + esc(MS.fn) + '" placeholder="' + tt('Contoh: Surau Taman Maju', 'e.g. Surau Taman Maju') + '">' +
-      '<div class="seg" style="margin-top:10px"><button class="' + (MS.ft === 'masjid' ? 'on' : '') + '" data-act="mtype" data-t="masjid">' + tt('Masjid', 'Mosque') + '</button><button class="' + (MS.ft === 'surau' ? 'on' : '') + '" data-act="mtype" data-t="surau">Surau</button></div>' +
+      '<div class="seg mtyp" style="margin-top:10px"><button class="' + (MS.ft === 'masjid' ? 'on' : '') + '" data-act="mtype" data-t="masjid">' + tt('Masjid', 'Mosque') + '</button><button class="' + (MS.ft === 'surau' ? 'on' : '') + '" data-act="mtype" data-t="surau">Surau</button><button class="' + (MS.ft === 'pusat' ? 'on' : '') + '" data-act="mtype" data-t="pusat">' + tt('Pusat Islam / Musolla', 'Islamic Centre / Musolla') + '</button></div>' +
       '<span class="lbl" style="margin-top:10px">' + tt('LOKASI', 'LOCATION') + '</span>' + (MS.nomap ? '<div class="mloc"><div class="note" style="margin:0">' + tt('Peta tidak dapat dimuat. Anda masih boleh tampal pautan atau koordinat di bawah.', 'The map could not load. You can still paste a link or coordinates below.') + '</div></div>' : '<div id="mmaph" class="mapbox"><div class="spinw" style="margin:70px 0"><div class="donut"></div></div></div>') +
       '<div class="mcoord"><div class="mlt" id="mlt">' + (MS.floc ? '📍 ' + MS.floc.lat.toFixed(5) + ', ' + MS.floc.lng.toFixed(5) : (MS.facc === -1 ? tt('Lokasi tidak diperoleh. Seret peta atau tampal pautan.', 'Location unavailable. Drag the map or paste a link.') : tt('Mengesan lokasi anda…', 'Detecting your location…'))) + '</div>' + (MS.facc > 0 ? '<div class="note" style="margin:2px 0 0">' + tt('Ketepatan GPS kira-kira ' + MS.facc + ' m (bulatan hijau). Seret peta jika perlu.', 'GPS accuracy about ' + MS.facc + ' m (green circle). Drag the map if needed.') + '</div>' : '') + '</div>' +
       '<div class="mbtns"><a id="mgm" class="btn ghost" target="_blank" rel="noopener" href="' + (MS.floc ? 'https://www.google.com/maps/search/?api=1&query=' + MS.floc.lat + ',' + MS.floc.lng : '#') + '"' + (MS.floc ? '' : ' aria-disabled="true"') + '>' + tt('Semak di Google Maps', 'Check in Google Maps') + '</a><button class="btn ghost" data-act="mpaste">' + tt('Tampal pautan / koordinat', 'Paste link / coordinates') + '</button></div>' +

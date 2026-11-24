@@ -1,6 +1,6 @@
 {
   "name": "istiqamah",
-  "version": "0.10.8",
+  "version": "0.10.9",
   "private": true,
   "description": "Istiqamah: waktu solat fardu dan sunat dalam satu tempat",
   "scripts": {

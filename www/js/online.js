@@ -46,7 +46,7 @@
       return (j.elements || []).map(function (e) {
         var t = e.tags || {}, la = e.lat != null ? e.lat : e.center && e.center.lat, ln = e.lon != null ? e.lon : e.center && e.center.lon;
         var n = t.name || t['name:ms'] || t['name:en'] || '';
-        return la == null || !n ? null : { id: 'o' + e.type[0] + e.id, n: n, t: /surau|musolla|musalla|suraya/i.test(n) ? 'surau' : 'masjid', lat: la, lng: ln, ver: false };
+        return la == null || !n ? null : { id: 'o' + e.type[0] + e.id, n: n, t: /pusat\s+islam|musolla|musalla|mussalla/i.test(n) ? 'pusat' : /surau|suraya/i.test(n) ? 'surau' : 'masjid', lat: la, lng: ln, ver: false };
       }).filter(Boolean);
     });
   }
