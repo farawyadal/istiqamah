@@ -2,7 +2,7 @@
 (function () {
   'use strict';
   var L = window.IstiLogic, I18N = window.ISTI_I18N, ZONES = window.ISTI_ZONES, ZPTS = window.ISTI_ZONEPTS || [];
-  var APP_VERSION = '0.10.9';
+  var APP_VERSION = '0.10.10';
   var APP_DATE = '24 Nov 2026';
   var params = new URLSearchParams(location.search);
   var Cap = window.Capacitor;
@@ -1178,7 +1178,7 @@
   }
   function masFetch(silent) {
     if (silent) MS.refreshing = true; else MS.busy = true;
-    MS.err = ''; MS.slow = false; if (!silent) render();
+    MS.err = ''; MS.slow = false; MS.why = ''; if (!silent) render();
     var sv = load('isti.loc', null), cache = load('isti.mas', null), gp = getPos(), used = null;
     return (sv ? Promise.resolve(sv) : gp).then(function (loc) {
       if (!loc) { if (!silent) MS.err = tt('Lokasi tidak diperoleh. Hidupkan lokasi dan cuba lagi.', 'Location unavailable. Turn on location and try again.'); return; }
@@ -1203,10 +1203,11 @@
         }
         var os = osmRows.filter(function (o) { return !fsRows.some(function (f) { return ISTI_NET.km(f.lat, f.lng, o.lat, o.lng) < 0.08; }); });
         var all = fsRows.concat(os).map(withD).filter(function (m) { return m.d < 25; }).sort(function (a, b) { return a.d - b.d; }).slice(0, 40);
+        if (MS.slow && !all.length) throw new Error('kosong');
         MS.loc = loc; MS.list = all;
         if (!MS.slow) { MS.ts = Date.now(); save('isti.mas', { ts: MS.ts, list: all, loc: loc }); }
       });
-    }).catch(function () { if (!silent && !(MS.list && MS.list.length)) MS.err = tt('Tidak dapat memuat senarai. Semak sambungan internet.', 'Could not load the list. Check your internet connection.'); else MS.slow = true; })
+    }).catch(function () { if (!silent && !(MS.list && MS.list.length)) MS.err = tt('Tidak dapat memuat senarai. Semak sambungan internet.', 'Could not load the list. Check your internet connection.'); else MS.slow = true; MS.why = ISTI_NET.why ? ISTI_NET.why() : ''; })
       .then(function () {
         MS.busy = false; MS.refreshing = false; render();
         if (used && sv) gp.then(function (g) { if (g && ISTI_NET.km(g.lat, g.lng, used.lat, used.lng) > 3 && screen === 'mas') masFetch(true); }); // GPS segar jauh dari lokasi lama
@@ -1323,7 +1324,7 @@
     return topbar(u('masjid'), true, '<button class="tbp" data-act="madd" aria-label="' + tt('Tambah masjid atau surau', 'Add a mosque or surau') + '">+</button>') + '<main class="scroll"><div class="note" style="margin:0 4px 8px">' + (MS.tab === 'near' ? tt('10 terdekat dari lokasi anda · disimpan dalam telefon', '10 nearest to you · saved on this phone') + (MS.ts ? ' · ' + new Date(MS.ts).toLocaleDateString(S.lang === 'en' ? 'en-GB' : 'ms-MY', { day: 'numeric', month: 'short' }) : '') + (MS.refreshing ? '' : ' · <button class="lnk" data-act="mrefresh">' + tt('Segar semula', 'Refresh') + '</button>') : tt('Disimpan dalam telefon, nampak walaupun tiada talian', 'Saved on this phone, visible offline')) + '</div>' +
       '<div class="chips" style="margin:0 0 8px">' + chip('near', tt('Terdekat', 'Nearest')) + chip('fav', tt('Kegemaran', 'Favourites')) + '</div>' +
       (MS.refreshing && MS.list && MS.list.length && !MS.busy ? '<div class="mfind"><span class="donut sm"></span><span>' + tt('Mencari tambahan dari OpenStreetMap…', 'Looking for more on OpenStreetMap…') + '</span></div>' : '') +
-      (MS.slow && !MS.refreshing ? '<div class="mslow">' + tt('Pelayan peta lambat. Senarai yang disimpan ditunjukkan.', 'The map server is slow. Showing the saved list.') + ' <button class="lnk" data-act="mrefresh">' + u('cuba') + '</button></div>' : '') +
+      (MS.slow && !MS.refreshing ? '<div class="mslow">' + tt('Pelayan peta lambat. Senarai yang disimpan ditunjukkan.', 'The map server is slow. Showing the saved list.') + (MS.why ? '<br><span style="font-size:11px;opacity:.8">' + esc(MS.why) + '</span>' : '') + ' <button class="lnk" data-act="mrefresh">' + u('cuba') + '</button></div>' : '') +
       body +
       '<div class="note" style="margin:8px 4px 0">' + tt('Data asas daripada OpenStreetMap. Yang bertanda Disahkan telah disemak admin Istiqamah.', 'Base data from OpenStreetMap. Entries marked Verified were checked by the Istiqamah admin.') + '</div></main>' + sheet;
   }
