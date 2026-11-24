@@ -28,7 +28,8 @@
     return fetch(B + ':runQuery?key=' + K, { method: 'POST', headers: H, body: JSON.stringify({ structuredQuery: sq }) }).then(ok)
       .then(function (a) { return a.filter(function (x) { return x.document; }).map(function (x) { return row(x.document); }); });
   }
-  var MIRRORS = ['https://overpass-api.de/api/interpreter', 'https://overpass.kumi.systems/api/interpreter', 'https://overpass.private.coffee/api/interpreter'];
+  var MIRRORS = ['https://overpass-api.de/api/interpreter', 'https://overpass.kumi.systems/api/interpreter', 'https://overpass.private.coffee/api/interpreter', 'https://lz4.overpass-api.de/api/interpreter', 'https://overpass.openstreetmap.fr/api/interpreter'];
+  var NOMERR = '';
   var LASTERR = [];
   function why(e) { return String(e && e.message || e || '?').replace(/^Error: /, '').slice(0, 40); }
   function raceOsm(q) { // tanya semua pelayan serentak, guna yang pertama menjawab
@@ -62,11 +63,12 @@
           if (r.type !== 'place_of_worship' || !r.name || seen[r.osm_id] || /^(surau|masjid|musolla|musalla|pusat islam)$/i.test(r.name.trim())) return; seen[r.osm_id] = 1;
           out.push({ id: 'n' + r.osm_type[0] + r.osm_id, n: r.name, t: kind(r.name), lat: +r.lat, lng: +r.lon, ver: false });
         });
-      }).catch(function () { /* abaikan */ });
+      }).catch(function (e) { NOMERR = 'nominatim ' + why(e); });
     }
     return one('masjid').then(function () { return one('surau'); }).then(function () { return one('pusat islam'); }).then(function () { if (!out.length) throw new Error('nominatim kosong'); out.fb = true; return out; });
   }
   function osm(lat, lng, rad) {
+    NOMERR = '';
     var q = '[out:json][timeout:25];(nwr["amenity"="place_of_worship"]["religion"="muslim"](around:' + rad + ',' + lat + ',' + lng + '););out center tags 150;';
     return new Promise(function (res, rej) {
       var done = false, ovFail = false, noFail = false, started = false, ft;
@@ -81,5 +83,5 @@
     var x = Math.sin(dl / 2) * Math.sin(dl / 2) + Math.cos(a * r) * Math.cos(c * r) * Math.sin(dn / 2) * Math.sin(dn / 2);
     return 2 * R * Math.asin(Math.sqrt(x));
   }
-  window.ISTI_NET = { add: add, query: query, osm: osm, km: km, why: function () { return LASTERR.filter(Boolean).join(', '); } };
+  window.ISTI_NET = { add: add, query: query, osm: osm, km: km, why: function () { return LASTERR.filter(Boolean).join(', ') + (NOMERR ? ' | ' + NOMERR : ''); } };
 })();

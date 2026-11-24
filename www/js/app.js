@@ -2,7 +2,7 @@
 (function () {
   'use strict';
   var L = window.IstiLogic, I18N = window.ISTI_I18N, ZONES = window.ISTI_ZONES, ZPTS = window.ISTI_ZONEPTS || [];
-  var APP_VERSION = '0.10.11';
+  var APP_VERSION = '0.10.12';
   var APP_DATE = '24 Nov 2026';
   var params = new URLSearchParams(location.search);
   var Cap = window.Capacitor;
@@ -1196,7 +1196,7 @@
       return Promise.all([fsP, osmNear(loc, 0).catch(function () { return null; })]).then(function (r) {
         var osmRows = r[1];
         if (osmRows === null) {
-          MS.slow = true;
+          MS.slow = true; MS.why = ISTI_NET.why ? ISTI_NET.why() : '';
           var old = cache && cache.v === 2 && cache.list && cache.loc && ISTI_NET.km(cache.loc.lat, cache.loc.lng, loc.lat, loc.lng) < 3 ? cache.list.filter(function (m) { return !m.ver; }) : [];
           osmRows = old;
           if (!fsRows.length && !old.length) throw new Error('net');
