@@ -2,7 +2,7 @@
 (function () {
   'use strict';
   var L = window.IstiLogic, I18N = window.ISTI_I18N, ZONES = window.ISTI_ZONES, ZPTS = window.ISTI_ZONEPTS || [];
-  var APP_VERSION = '0.10.10';
+  var APP_VERSION = '0.10.11';
   var APP_DATE = '24 Nov 2026';
   var params = new URLSearchParams(location.search);
   var Cap = window.Capacitor;
@@ -1160,12 +1160,12 @@
   }
   var MAS_RAD = [6000, 20000];
   function osmNear(loc, i) {
-    return ISTI_NET.osm(loc.lat, loc.lng, MAS_RAD[i]).then(function (r) { return (r.length >= 10 || i + 1 >= MAS_RAD.length) ? r : osmNear(loc, i + 1).catch(function () { return r; }); });
+    return ISTI_NET.osm(loc.lat, loc.lng, MAS_RAD[i]).then(function (r) { return (r.fb || r.length >= 10 || i + 1 >= MAS_RAD.length) ? r : osmNear(loc, i + 1).catch(function () { return r; }); });
   }
   function masLoad(force) {
     if (MS.busy || MS.refreshing || !window.ISTI_NET) return;
     var cache = load('isti.mas', null), here = load('isti.loc', null);
-    var near = cache && cache.list && cache.list.length && cache.loc && (!here || ISTI_NET.km(cache.loc.lat, cache.loc.lng, here.lat, here.lng) < 3);
+    var near = cache && cache.v === 2 && cache.list && cache.list.length && cache.loc && (!here || ISTI_NET.km(cache.loc.lat, cache.loc.lng, here.lat, here.lng) < 3);
     if (!force && MS.list === null && near) {
       MS.loc = here || cache.loc; MS.list = cache.list; MS.ts = cache.ts;
       MS.list.forEach(function (m) { m.d = ISTI_NET.km(MS.loc.lat, MS.loc.lng, m.lat, m.lng); });
@@ -1174,7 +1174,7 @@
       return masFetch(true);
     }
     if (!force && MS.list) return;
-    return masFetch(MS.list !== null && MS.list.length > 0);
+    return masFetch(!force && MS.list !== null && MS.list.length > 0);
   }
   function masFetch(silent) {
     if (silent) MS.refreshing = true; else MS.busy = true;
@@ -1197,15 +1197,16 @@
         var osmRows = r[1];
         if (osmRows === null) {
           MS.slow = true;
-          var old = cache && cache.list && cache.loc && ISTI_NET.km(cache.loc.lat, cache.loc.lng, loc.lat, loc.lng) < 3 ? cache.list.filter(function (m) { return !m.ver; }) : [];
+          var old = cache && cache.v === 2 && cache.list && cache.loc && ISTI_NET.km(cache.loc.lat, cache.loc.lng, loc.lat, loc.lng) < 3 ? cache.list.filter(function (m) { return !m.ver; }) : [];
           osmRows = old;
           if (!fsRows.length && !old.length) throw new Error('net');
         }
+        if (osmRows && osmRows.fb) MS.slow = true; // data sandaran: jangan simpan sebagai senarai tetap
         var os = osmRows.filter(function (o) { return !fsRows.some(function (f) { return ISTI_NET.km(f.lat, f.lng, o.lat, o.lng) < 0.08; }); });
         var all = fsRows.concat(os).map(withD).filter(function (m) { return m.d < 25; }).sort(function (a, b) { return a.d - b.d; }).slice(0, 40);
         if (MS.slow && !all.length) throw new Error('kosong');
         MS.loc = loc; MS.list = all;
-        if (!MS.slow) { MS.ts = Date.now(); save('isti.mas', { ts: MS.ts, list: all, loc: loc }); }
+        if (!MS.slow) { MS.ts = Date.now(); save('isti.mas', { v: 2, ts: MS.ts, list: all, loc: loc }); }
       });
     }).catch(function () { if (!silent && !(MS.list && MS.list.length)) MS.err = tt('Tidak dapat memuat senarai. Semak sambungan internet.', 'Could not load the list. Check your internet connection.'); else MS.slow = true; MS.why = ISTI_NET.why ? ISTI_NET.why() : ''; })
       .then(function () {

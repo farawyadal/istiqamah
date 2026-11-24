@@ -59,12 +59,12 @@
     function one(term) {
       return fetch('https://nominatim.openstreetmap.org/search?format=jsonv2&limit=40&bounded=1&viewbox=' + vb + '&q=' + encodeURIComponent(term)).then(ok).then(function (a) {
         (a || []).forEach(function (r) {
-          if (r.type !== 'place_of_worship' || !r.name || seen[r.osm_id]) return; seen[r.osm_id] = 1;
+          if (r.type !== 'place_of_worship' || !r.name || seen[r.osm_id] || /^(surau|masjid|musolla|musalla|pusat islam)$/i.test(r.name.trim())) return; seen[r.osm_id] = 1;
           out.push({ id: 'n' + r.osm_type[0] + r.osm_id, n: r.name, t: kind(r.name), lat: +r.lat, lng: +r.lon, ver: false });
         });
       }).catch(function () { /* abaikan */ });
     }
-    return one('masjid').then(function () { return one('surau'); }).then(function () { return one('pusat islam'); }).then(function () { if (!out.length) throw new Error('nominatim kosong'); return out; });
+    return one('masjid').then(function () { return one('surau'); }).then(function () { return one('pusat islam'); }).then(function () { if (!out.length) throw new Error('nominatim kosong'); out.fb = true; return out; });
   }
   function osm(lat, lng, rad) {
     var q = '[out:json][timeout:25];(nwr["amenity"="place_of_worship"]["religion"="muslim"](around:' + rad + ',' + lat + ',' + lng + '););out center tags 150;';
